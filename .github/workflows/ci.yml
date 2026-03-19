@@ -82,7 +82,11 @@ jobs:
           echo "构建API服务器..."
           if go build -o taskflow-api ./cmd/main.go; then
             echo "✅ API服务器构建成功"
-            ./taskflow-api --version 2>&1 || true
+            # 只验证可执行文件存在，不运行服务
+            if [ -f "taskflow-api" ]; then
+              echo "可执行文件大小: $(du -h taskflow-api | cut -f1)"
+              echo "构建验证完成"
+            fi
           else
             echo "❌ API服务器构建失败"
           fi
@@ -92,7 +96,11 @@ jobs:
           echo "构建Kafka消费者服务..."
           if go build -o taskflow-consumer ./cmd/consumer/main.go; then
             echo "✅ 消费者服务构建成功"
-            ./taskflow-consumer --help 2>&1 | head -5 || true
+            # 只验证可执行文件存在，不运行服务
+            if [ -f "taskflow-consumer" ]; then
+              echo "可执行文件大小: $(du -h taskflow-consumer | cut -f1)"
+              echo "构建验证完成"
+            fi
           else
             echo "⚠️ 消费者服务构建失败（可能是预期行为）"
           fi
