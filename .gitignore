@@ -53,3 +53,5 @@ coverage/
 
 # 开发工具
 air.toml
+
+/.idea
