@@ -77,12 +77,12 @@ type UploadConfig struct {
 }
 
 type KafkaConfig struct {
-	Enabled            bool                `mapstructure:"enabled"`
-	Brokers            []string            `mapstructure:"brokers"`
-	ClientID           string              `mapstructure:"client_id"`
-	NotificationGroupID string             `mapstructure:"notification_group_id"`
-	AuditGroupID       string              `mapstructure:"audit_group_id"`
-	Topics             map[string][]string `mapstructure:"topics"`
+	Enabled             bool                `mapstructure:"enabled"`
+	Brokers             []string            `mapstructure:"brokers"`
+	ClientID            string              `mapstructure:"client_id"`
+	NotificationGroupID string              `mapstructure:"notification_group_id"`
+	AuditGroupID        string              `mapstructure:"audit_group_id"`
+	Topics              map[string][]string `mapstructure:"topics"`
 }
 
 var cfg *Config

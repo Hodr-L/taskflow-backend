@@ -24,15 +24,15 @@ type Claims struct {
 }
 
 type JWTManager struct {
-	secretKey           string
-	accessTokenDuration time.Duration
+	secretKey            string
+	accessTokenDuration  time.Duration
 	refreshTokenDuration time.Duration
 }
 
 func NewJWTManager(cfg config.JWTConfig) *JWTManager {
 	return &JWTManager{
-		secretKey:           cfg.Secret,
-		accessTokenDuration: time.Hour * time.Duration(cfg.AccessTokenExpireHours),
+		secretKey:            cfg.Secret,
+		accessTokenDuration:  time.Hour * time.Duration(cfg.AccessTokenExpireHours),
 		refreshTokenDuration: time.Hour * 24 * time.Duration(cfg.RefreshTokenExpireDays),
 	}
 }

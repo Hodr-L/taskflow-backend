@@ -9,11 +9,11 @@ import (
 )
 
 var (
-	ErrUserExists        = errors.New("用户已存在")
-	ErrUserNotFound      = errors.New("用户不存在")
+	ErrUserExists         = errors.New("用户已存在")
+	ErrUserNotFound       = errors.New("用户不存在")
 	ErrInvalidCredentials = errors.New("无效的凭据")
-	ErrInvalidInput      = errors.New("无效的输入")
-	ErrUserInactive      = errors.New("用户账户未激活")
+	ErrInvalidInput       = errors.New("无效的输入")
+	ErrUserInactive       = errors.New("用户账户未激活")
 )
 
 type AuthService struct {
@@ -198,7 +198,7 @@ func (s *AuthService) ListUsers(page, limit int, search string) ([]models.User, 
 
 	// 搜索条件
 	if search != "" {
-		query = query.Where("username LIKE ? OR email LIKE ?", 
+		query = query.Where("username LIKE ? OR email LIKE ?",
 			"%"+search+"%", "%"+search+"%")
 	}
 

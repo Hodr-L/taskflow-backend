@@ -19,8 +19,8 @@ type Project struct {
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
 	// 关联关系
-	Team    *Team  `gorm:"foreignKey:TeamID" json:"team,omitempty"`
-	Owner   *User  `gorm:"foreignKey:OwnerID" json:"owner,omitempty"`
+	Team  *Team `gorm:"foreignKey:TeamID" json:"team,omitempty"`
+	Owner *User `gorm:"foreignKey:OwnerID" json:"owner,omitempty"`
 	// Tasks   []Task `gorm:"foreignKey:ProjectID" json:"tasks,omitempty"`
 }
 
