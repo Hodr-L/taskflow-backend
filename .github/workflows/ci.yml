@@ -7,6 +7,9 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   code-quality:
     runs-on: ubuntu-latest
@@ -20,7 +23,7 @@ jobs:
           go-version: '1.21'
 
       - name: Cache dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cache/go-build
@@ -35,6 +38,8 @@ jobs:
       - name: Check code formatting
         run: |
           echo "检查代码格式..."
+          # 先删除可能存在的旧文件
+          rm -f gofmt-output.txt
           gofmt -l . | tee gofmt-output.txt
           if [ -s gofmt-output.txt ]; then
             echo "❌ 代码格式需要调整，运行: gofmt -w ."
@@ -53,7 +58,7 @@ jobs:
     needs: code-quality
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Go
         uses: actions/setup-go@v5
