@@ -24,9 +24,13 @@ func (h *TeamHandler) CreateTeam(c *gin.Context) {
 	// TODO: 实现创建团队逻辑
 }
 
+func (h *TeamHandler) GetListTeams(c *gin.Context) {
+	// TODO: 实现获取团队列表逻辑
+}
+
 // GetTeams 获取团队列表
 func (h *TeamHandler) GetTeams(c *gin.Context) {
-	// TODO: 实现获取团队列表逻辑
+	// TODO: 获取用户参与的团队列表
 }
 
 // GetTeam 获取团队详情

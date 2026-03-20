@@ -1,6 +1,7 @@
 package services
 
 import (
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
 	"taskflow-backend/internal/models"
@@ -20,9 +21,15 @@ func (s *TeamService) CreateTeam(userID uint, name, description string) (*models
 	return nil, nil
 }
 
+// GetListTeams 获取团队列表逻辑
+func (s *TeamService) GetListTeams(c *gin.Context) ([]models.Team, int64, error) {
+	// TODO: 实现获取团队列表逻辑
+	return nil, 0, nil
+}
+
 // GetTeams 获取用户参与的团队列表
 func (s *TeamService) GetTeams(userID uint, page, limit int) ([]models.Team, int64, error) {
-	// TODO: 实现获取团队列表逻辑
+	// TODO: 获取用户参与的团队列表
 	return nil, 0, nil
 }
 
