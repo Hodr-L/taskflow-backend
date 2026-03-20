@@ -11,9 +11,9 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"taskflow-backend/api/routes"
 	"taskflow-backend/internal/config"
 	"taskflow-backend/internal/handlers"
-	"taskflow-backend/internal/middleware"
 	"taskflow-backend/pkg/jwt"
 	"taskflow-backend/pkg/logger"
 )
@@ -78,6 +78,7 @@ func (s *Server) setupRoutes(jwtManager *jwt.JWTManager) {
 	// 创建处理器
 	authHandler := handlers.NewAuthHandler(s.db, jwtManager)
 	teamHandler := handlers.NewTeamHandler(s.db)
+	userHandler := handlers.NewUserHandler(s.db)
 
 	// API路由组
 	api := s.router.Group("/api/v1")
@@ -85,57 +86,14 @@ func (s *Server) setupRoutes(jwtManager *jwt.JWTManager) {
 		// 健康检查
 		api.GET("/health", s.healthCheck)
 
-		// 认证路由
-		auth := api.Group("/auth")
-		{
-			auth.POST("/register", authHandler.Register)
-			auth.POST("/login", authHandler.Login)
-			auth.POST("/refresh", authHandler.RefreshToken)
-
-			// 需要认证的路由
-			auth.Use(middleware.JWTAuth(jwtManager))
-			auth.POST("/logout", authHandler.Logout)
-			auth.GET("/profile", authHandler.GetProfile)
-			auth.PUT("/profile", authHandler.UpdateProfile)
-			auth.PUT("/password", authHandler.ChangePassword)
-		}
-
-		// 用户管理路由（需要管理员权限）
-		users := api.Group("/users")
-		users.Use(middleware.JWTAuth(jwtManager), middleware.RequireAdmin())
-		{
-			// TODO: 实现用户管理接口
-			// users.GET("", userHandler.ListUsers)
-			// users.GET("/:id", userHandler.GetUser)
-			// users.PUT("/:id", userHandler.UpdateUser)
-			// users.DELETE("/:id", userHandler.DeleteUser)
-		}
-
-		// 团队路由
-		teams := api.Group("/teams")
-		teams.Use(middleware.JWTAuth(jwtManager))
-		{
-			// TODO: 实现团队管理接口
-			teams.GET("", teamHandler.GetTeams)
-			teams.POST("", teamHandler.CreateTeam)
-			teams.GET("/:id", teamHandler.GetTeam)
-			teams.PUT("/:id", teamHandler.UpdateTeam)
-			teams.DELETE("/:id", teamHandler.DeleteTeam)
-		}
-
-		// 项目路由
-		projects := api.Group("/projects")
-		projects.Use(middleware.JWTAuth(jwtManager))
-		{
-			// TODO: 实现项目管理接口
-		}
-
-		// 任务路由
-		tasks := api.Group("/tasks")
-		tasks.Use(middleware.JWTAuth(jwtManager))
-		{
-			// TODO: 实现任务管理接口
-		}
+		// 注册模块化路由
+		routes.RegisterAuthRoutes(api, jwtManager, authHandler)
+		routes.RegisterTeamRoutes(api, jwtManager, teamHandler)
+		routes.RegisterUserRoutes(api, jwtManager, userHandler)
+		// TODO: 注册其他模块路由（待实现对应handler后）
+		// routes.RegisterUserRoutes(api, jwtManager, userHandler)
+		// routes.RegisterProjectRoutes(api, jwtManager, projectHandler)
+		// routes.RegisterTaskRoutes(api, jwtManager, taskHandler)
 	}
 
 	// 静态文件服务（上传的文件）

@@ -55,3 +55,5 @@ coverage/
 air.toml
 
 /.idea
+
+*.xml
