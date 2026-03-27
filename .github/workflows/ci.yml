@@ -9,6 +9,17 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  
+  # 配置环境变量（从 GitHub Secrets 获取）
+  # 在仓库设置中添加以下 secrets：
+  # - DB_PASSWORD: 测试数据库密码
+  # - REDIS_PASSWORD: 测试Redis密码  
+  # - JWT_SECRET: 测试JWT密钥
+  # 如果没有设置secrets，集成测试将跳过
+  DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+  REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+  JWT_SECRET: ${{ secrets.JWT_SECRET }}
+  APP_ENV: test
 
 jobs:
   code-quality:
@@ -110,9 +121,63 @@ jobs:
             echo "⚠️ 消费者服务构建失败（可能是预期行为）"
           fi
 
+  integration-test:
+    runs-on: ubuntu-latest
+    needs: build
+    if: ${{ secrets.DB_PASSWORD != '' && secrets.JWT_SECRET != '' }}  # 仅在secrets设置时运行
+    env:
+      DB_HOST: localhost
+      DB_PORT: 3306
+      DB_NAME: test_taskflow
+      DB_USER: test_user
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      APP_ENV: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Setup test infrastructure
+        run: |
+          echo "🔧 设置测试基础设施..."
+          # 这里可以添加启动测试数据库和Redis的步骤
+          # 例如使用Docker启动测试服务
+          echo "测试环境变量已配置"
+          echo "DB_PASSWORD: ${DB_PASSWORD:0:5}..."  # 只显示前5个字符
+          echo "JWT_SECRET: ${JWT_SECRET:0:5}..."
+
+      - name: Run integration tests
+        run: |
+          echo "🧪 运行集成测试..."
+          # 这里运行需要环境变量的集成测试
+          # 例如：go test ./internal/... -tags=integration -v
+          echo "集成测试框架就绪 - 添加具体测试命令"
+          echo "提示：创建 _integration_test.go 文件并使用 //go:build integration 标签"
+
+      - name: Integration test report
+        run: |
+          echo "✅ 集成测试环境配置完成"
+          echo "📋 配置的secrets:"
+          echo "- DB_PASSWORD: 已设置"${{ secrets.DB_PASSWORD != '' && ' ✓' || ' ✗' }}
+          echo "- REDIS_PASSWORD: 已设置"${{ secrets.REDIS_PASSWORD != '' && ' ✓' || ' ✗' }}
+          echo "- JWT_SECRET: 已设置"${{ secrets.JWT_SECRET != '' && ' ✓' || ' ✗' }}
+          echo ""
+          echo "💡 要运行完整集成测试，请："
+          echo "1. 在GitHub仓库设置中配置上述secrets"
+          echo "2. 创建带有 //go:build integration 标签的测试文件"
+          echo "3. 取消注释上面的集成测试命令"
+
   report:
     runs-on: ubuntu-latest
-    needs: [code-quality, test, build]
+    needs: [code-quality, test, build, integration-test]
     if: always()
     steps:
       - name: Generate report
@@ -129,5 +194,6 @@ jobs:
           echo "- 代码质量: ${{ needs.code-quality.result || 'unknown' }}"
           echo "- 测试: ${{ needs.test.result || 'unknown' }}"
           echo "- 构建: ${{ needs.build.result || 'unknown' }}"
+          echo "- 集成测试: ${{ needs.integration-test.result || 'skipped' }}"
           echo ""
           echo "查看详情: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
