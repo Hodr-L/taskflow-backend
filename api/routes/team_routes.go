@@ -16,12 +16,12 @@ func RegisterTeamRoutes(router *gin.RouterGroup, jwtManager *jwt.JWTManager, tea
 		// 团队列表和创建
 		teams.GET("", teamHandler.GetTeams)
 		teams.POST("", teamHandler.CreateTeam)
-		
+
 		// 单个团队操作
 		teams.GET("/:id", teamHandler.GetTeam)
 		teams.PUT("/:id", teamHandler.UpdateTeam)
 		teams.DELETE("/:id", teamHandler.DeleteTeam)
-		
+
 		// TODO: 添加团队成员管理路由
 		// teams.POST("/:id/members", teamHandler.AddMember)
 		// teams.DELETE("/:id/members/:userId", teamHandler.RemoveMember)
