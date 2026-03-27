@@ -114,7 +114,7 @@ jobs:
   integration-test:
     runs-on: ubuntu-latest
     needs: build
-    if: ${{ secrets.DB_PASSWORD && secrets.JWT_SECRET }}  # 仅在secrets设置时运行
+    if: ${{ secrets.DB_PASSWORD != '' && secrets.JWT_SECRET != '' }}  # 仅在secrets设置时运行
     env:
       DB_HOST: localhost
       DB_PORT: 3306
