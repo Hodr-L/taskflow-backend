@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
@@ -19,13 +20,14 @@ import (
 )
 
 type Server struct {
-	config *config.Config
-	db     *gorm.DB
-	router *gin.Engine
-	server *http.Server
+	config      *config.Config
+	db          *gorm.DB
+	router      *gin.Engine
+	server      *http.Server
+	redisClient *redis.Client
 }
 
-func New(cfg *config.Config, db *gorm.DB) *Server {
+func New(cfg *config.Config, db *gorm.DB, redisClient *redis.Client) *Server {
 	// 设置Gin模式
 	if cfg.App.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -55,9 +57,10 @@ func New(cfg *config.Config, db *gorm.DB) *Server {
 
 	// 注册路由
 	s := &Server{
-		config: cfg,
-		db:     db,
-		router: router,
+		config:      cfg,
+		db:          db,
+		router:      router,
+		redisClient: redisClient,
 	}
 
 	s.setupRoutes(jwtManager)
@@ -77,6 +80,7 @@ func New(cfg *config.Config, db *gorm.DB) *Server {
 func (s *Server) setupRoutes(jwtManager *jwt.JWTManager) {
 	// 创建处理器
 	authHandler := handlers.NewAuthHandler(s.db, jwtManager)
+	tokenBlackHandler := handlers.NewTokenBlackHandler(s.redisClient, jwtManager)
 	teamHandler := handlers.NewTeamHandler(s.db)
 	userHandler := handlers.NewUserHandler(s.db)
 
@@ -87,11 +91,17 @@ func (s *Server) setupRoutes(jwtManager *jwt.JWTManager) {
 		api.GET("/health", s.healthCheck)
 
 		// 注册模块化路由
-		routes.RegisterAuthRoutes(api, jwtManager, authHandler)
-		routes.RegisterTeamRoutes(api, jwtManager, teamHandler)
-		routes.RegisterUserRoutes(api, jwtManager, userHandler)
+		routes.RegisterAuthRoutes(api, jwtManager, tokenBlackHandler, authHandler)
+		routes.RegisterUserRoutes(api, jwtManager, tokenBlackHandler, userHandler)
+		routes.RegisterTeamRoutes(api, jwtManager, tokenBlackHandler, teamHandler)
+
+		api.GET("/debug/test", func(c *gin.Context) {
+			logger.Debug("Debug级别日志")
+			logger.Info("Info级别日志")
+			logger.Warn("Warn级别日志")
+			c.JSON(200, gin.H{"message": "测试成功"})
+		})
 		// TODO: 注册其他模块路由（待实现对应handler后）
-		// routes.RegisterUserRoutes(api, jwtManager, userHandler)
 		// routes.RegisterProjectRoutes(api, jwtManager, projectHandler)
 		// routes.RegisterTaskRoutes(api, jwtManager, taskHandler)
 	}

@@ -4,8 +4,9 @@ import (
 	"errors"
 	"regexp"
 
-	"gorm.io/gorm"
 	"taskflow-backend/internal/models"
+
+	"gorm.io/gorm"
 )
 
 var (
@@ -83,91 +84,6 @@ func (s *AuthService) Login(email, password string) (*models.User, error) {
 	return &user, nil
 }
 
-// GetUserByID 根据ID获取用户
-func (s *AuthService) GetUserByID(id uint) (*models.User, error) {
-	var user models.User
-	if err := s.db.First(&user, id).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrUserNotFound
-		}
-		return nil, err
-	}
-	return &user, nil
-}
-
-// GetUserByEmail 根据邮箱获取用户
-func (s *AuthService) GetUserByEmail(email string) (*models.User, error) {
-	var user models.User
-	if err := s.db.Where("email = ?", email).First(&user).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrUserNotFound
-		}
-		return nil, err
-	}
-	return &user, nil
-}
-
-// UpdateUser 更新用户信息
-func (s *AuthService) UpdateUser(id uint, req models.UserUpdateRequest) (*models.User, error) {
-	user, err := s.GetUserByID(id)
-	if err != nil {
-		return nil, err
-	}
-
-	// 更新用户名（如果提供）
-	if req.Username != nil {
-		// 检查用户名是否已存在
-		var count int64
-		s.db.Model(&models.User{}).Where("username = ? AND id != ?", *req.Username, id).Count(&count)
-		if count > 0 {
-			return nil, errors.New("用户名已存在")
-		}
-		user.Username = *req.Username
-	}
-
-	// 更新头像（如果提供）
-	if req.AvatarURL != nil {
-		user.AvatarURL = req.AvatarURL
-	}
-
-	// 保存更新
-	if err := s.db.Save(user).Error; err != nil {
-		return nil, err
-	}
-
-	return user, nil
-}
-
-// ChangePassword 修改密码
-func (s *AuthService) ChangePassword(id uint, oldPassword, newPassword string) error {
-	user, err := s.GetUserByID(id)
-	if err != nil {
-		return err
-	}
-
-	// 验证原密码
-	if !user.CheckPassword(oldPassword) {
-		return ErrInvalidCredentials
-	}
-
-	// 验证新密码
-	if len(newPassword) < 6 {
-		return ErrInvalidInput
-	}
-
-	// 设置新密码
-	if err := user.SetPassword(newPassword); err != nil {
-		return err
-	}
-
-	// 保存到数据库
-	if err := s.db.Save(user).Error; err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // validateUserInput 验证用户输入
 func validateUserInput(username, email, password string) error {
 	// 验证用户名
@@ -184,67 +100,6 @@ func validateUserInput(username, email, password string) error {
 	// 验证密码
 	if len(password) < 6 {
 		return errors.New("密码长度至少6个字符")
-	}
-
-	return nil
-}
-
-// ListUsers 获取用户列表（分页）
-func (s *AuthService) ListUsers(page, limit int, search string) ([]models.User, int64, error) {
-	var users []models.User
-	var total int64
-
-	query := s.db.Model(&models.User{})
-
-	// 搜索条件
-	if search != "" {
-		query = query.Where("username LIKE ? OR email LIKE ?",
-			"%"+search+"%", "%"+search+"%")
-	}
-
-	// 计算总数
-	if err := query.Count(&total).Error; err != nil {
-		return nil, 0, err
-	}
-
-	// 分页查询
-	offset := (page - 1) * limit
-	if err := query.Offset(offset).Limit(limit).Find(&users).Error; err != nil {
-		return nil, 0, err
-	}
-
-	return users, total, nil
-}
-
-// UpdateUserStatus 更新用户状态
-func (s *AuthService) UpdateUserStatus(id uint, status string) error {
-	if status != "active" && status != "inactive" && status != "banned" {
-		return errors.New("无效的状态值")
-	}
-
-	result := s.db.Model(&models.User{}).Where("id = ?", id).Update("status", status)
-	if result.Error != nil {
-		return result.Error
-	}
-	if result.RowsAffected == 0 {
-		return ErrUserNotFound
-	}
-
-	return nil
-}
-
-// UpdateUserRole 更新用户角色
-func (s *AuthService) UpdateUserRole(id uint, role string) error {
-	if role != "user" && role != "admin" && role != "super_admin" {
-		return errors.New("无效的角色值")
-	}
-
-	result := s.db.Model(&models.User{}).Where("id = ?", id).Update("role", role)
-	if result.Error != nil {
-		return result.Error
-	}
-	if result.RowsAffected == 0 {
-		return ErrUserNotFound
 	}
 
 	return nil

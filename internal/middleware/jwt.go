@@ -2,16 +2,18 @@ package middleware
 
 import (
 	"strings"
+	"taskflow-backend/internal/services"
 
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 	"taskflow-backend/internal/handlers"
 	"taskflow-backend/pkg/jwt"
 	"taskflow-backend/pkg/logger"
+
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 // JWTAuth JWT认证中间件
-func JWTAuth(jwtManager *jwt.JWTManager) gin.HandlerFunc {
+func JWTAuth(jwtManager *jwt.JWTManager, tokenBlacklist *services.TokenBlacklistService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 从请求头获取token
 		authHeader := c.GetHeader("Authorization")
@@ -30,6 +32,23 @@ func JWTAuth(jwtManager *jwt.JWTManager) gin.HandlerFunc {
 		}
 
 		tokenString := parts[1]
+
+		// 1. 首先检查 token 是否在黑名单中
+		isBlacklisted, err := tokenBlacklist.IsBlacklisted(c, tokenString)
+		if err != nil {
+			logger.Error("检查黑名单失败", zap.Error(err))
+			// Redis 错误时，可以选择继续验证或不验证
+			handlers.Unauthorized(c, "系统异常")
+			c.Abort()
+			return
+		}
+
+		if isBlacklisted {
+			logger.Warn("使用黑名单中的token", zap.String("token", tokenString[:20]+"..."))
+			handlers.Unauthorized(c, "令牌已失效")
+			c.Abort()
+			return
+		}
 
 		// 验证token
 		claims, err := jwtManager.VerifyToken(tokenString)
