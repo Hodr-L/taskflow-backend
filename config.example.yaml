@@ -1,0 +1,95 @@
+# TaskFlow 后端配置模板
+# 复制此文件为 config.yaml 并修改配置值
+# 敏感信息（密码、密钥）应通过环境变量设置
+
+app:
+  name: "TaskFlow"
+  version: "1.0.0"
+  env: "development"  # development, testing, production
+  debug: true  # 生产环境应设置为 false
+
+server:
+  port: 30088  # 可通过环境变量 SERVER_PORT 覆盖
+  host: "0.0.0.0"  # 监听所有地址
+  read_timeout: 10  # 秒
+  write_timeout: 10  # 秒
+  idle_timeout: 60  # 秒
+  cors_allowed_origins:
+    - "http://localhost:3000"
+    - "http://localhost:8080"
+    # 生产环境添加实际域名
+
+database:
+  # MySQL 数据库配置
+  host: "localhost"  # 可通过环境变量 DB_HOST 覆盖
+  port: 53306  # 主机端口（容器内为3306），可通过环境变量 DB_PORT 覆盖
+  name: "taskflow"  # 数据库名，可通过环境变量 DB_NAME 覆盖
+  user: "taskflow"  # 数据库用户，可通过环境变量 DB_USER 覆盖
+  password: ""  # ⚠️ 必须通过 DB_PASSWORD 环境变量设置
+  charset: "utf8mb4"
+  parse_time: true
+  loc: "Local"
+  max_open_conns: 25  # 最大连接数
+  max_idle_conns: 5   # 空闲连接数
+  conn_max_lifetime: 300  # 连接最大生存时间（秒）
+
+redis:
+  # Redis 缓存配置
+  host: "localhost"  # 可通过环境变量 REDIS_HOST 覆盖
+  port: 6379  # 可通过环境变量 REDIS_PORT 覆盖
+  password: ""  # ⚠️ 必须通过 REDIS_PASSWORD 环境变量设置
+  db: 0  # Redis数据库编号
+  pool_size: 10  # 连接池大小
+  min_idle_conns: 2  # 最小空闲连接数
+
+jwt:
+  # JWT 令牌配置
+  secret: ""  # ⚠️ 必须通过 JWT_SECRET 环境变量设置，长度至少32位
+  access_token_expire_hours: 24  # 访问令牌有效期（小时）
+  refresh_token_expire_days: 7   # 刷新令牌有效期（天）
+
+log:
+  # 日志配置
+  level: "info"  # debug, info, warn, error，生产环境建议 info 或 warn
+  format: "json"  # json, text
+  output: "stdout"  # stdout, file
+
+upload:
+  # 文件上传配置
+  max_size: 10485760  # 10MB，最大文件大小
+  allowed_types:
+    - "image/jpeg"
+    - "image/png"
+    - "image/gif"
+    - "application/pdf"
+  storage_path: "./uploads"  # 上传文件存储路径
+
+kafka:
+  # Kafka 消息队列配置
+  enabled: false  # 开发环境可禁用，生产环境启用
+  brokers:
+    - "localhost:9092"
+  client_id: "taskflow-backend"
+  notification_group_id: "notification-consumer-group"
+  audit_group_id: "audit-consumer-group"
+  topics:
+    notification:
+      - "user-registered"
+      - "task-created"
+      - "task-updated"
+      - "comment-added"
+    audit:
+      - "user-login"
+      - "user-action"
+      - "task-operation"
+      - "file-upload"
+  group_id: "taskflow-consumer-group"
+
+# 邮件配置（通过环境变量设置）
+# SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM
+
+# 速率限制（通过环境变量设置）
+# RATE_LIMIT_ENABLED, RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW
+
+# 功能开关（通过环境变量设置）
+# FEATURE_NOTIFICATIONS_ENABLED, FEATURE_AUDIT_LOG_ENABLED 等
