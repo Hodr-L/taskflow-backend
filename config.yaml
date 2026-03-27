@@ -18,7 +18,7 @@ server:
 
 database:
   host: "localhost"
-  port: 3307
+  port: 53306
   name: "taskflow"
   user: "taskflow"
   password: "taskflow123"
@@ -38,12 +38,12 @@ redis:
   min_idle_conns: 2
 
 jwt:
-  secret: "your-super-secret-jwt-key-change-in-production"
+  secret: ""
   access_token_expire_hours: 24
   refresh_token_expire_days: 7
 
 log:
-  level: "info"  # debug, info, warn, error
+  level: "debug"  # debug, info, warn, error
   format: "json" # json, text
   output: "stdout"
 
