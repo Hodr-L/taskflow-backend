@@ -17,9 +17,12 @@ func RegisterAuthRoutes(router *gin.RouterGroup, jwtManager *jwt.JWTManager, tok
 		auth.POST("/register", authHandler.Register)
 		auth.POST("/login", authHandler.Login)
 		auth.POST("/refresh", authHandler.RefreshToken)
+	}
 
-		// 需要认证的路由
-		auth.Use(middleware.JWTAuth(jwtManager, tokenBlackHandler.TokenBlacklistService))
-		auth.POST("/logout", tokenBlackHandler.Logout)
+	// 需要认证的路由
+	token := auth.Group("/token")
+	token.Use(middleware.JWTAuth(jwtManager, tokenBlackHandler.TokenBlacklistService))
+	{
+		token.POST("/logout", tokenBlackHandler.Logout)
 	}
 }

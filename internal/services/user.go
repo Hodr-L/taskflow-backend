@@ -242,3 +242,69 @@ func (s *UserService) ResetPassword(id uint, req models.ResetPasswordRequest) er
 	return s.db.Save(user).Error
 
 }
+
+func (s *UserService) GetUserStatus() (*models.UserStats, error) {
+	var stats models.UserStats
+	// 构建SQL查询
+	sql := `
+		SELECT
+    COUNT(*) as total,
+    COUNT(CASE WHEN status = 'active' THEN 1 END) as active,
+    COUNT(CASE WHEN status = 'inactive' THEN 1 END) as inactive,
+    COUNT(CASE WHEN status = 'banned' THEN 1 END) as banned,
+    COUNT(CASE WHEN role = 'admin' THEN 1 END) as admin,
+    COUNT(CASE WHEN role = 'super_admin' THEN 1 END) as super_admin,
+    COUNT(CASE WHEN email_verified = FALSE THEN 1 END) as unverified
+FROM users
+WHERE deleted_at IS NULL
+	`
+
+	err := s.db.Raw(sql).Scan(&stats).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &stats, nil
+}
+
+func (s *UserService) CreateUser(req models.CreateUserRequest) (*models.User, error) {
+
+	// 验证输入
+	if err := validateUserInput(req.Username, req.Email, req.Password); err != nil {
+		return nil, ErrInvalidInput
+	}
+
+	// 检查用户是否已存在
+	var count int64
+	s.db.Model(&models.User{}).Where("username = ? OR email = ?", req.Username, req.Email).Count(&count)
+	if count > 0 {
+		return nil, ErrUserExists
+	}
+
+	// 创建用户
+	user := &models.User{
+		Username:  req.Username,
+		Email:     req.Email,
+		Fullname:  req.Fullname,
+		Bio:       req.Bio,
+		Role:      req.Role,
+		Status:    req.Status,
+		AvatarURL: &req.AvatarURL,
+	}
+
+	// 设置密码
+	if err := user.SetPassword(req.Password); err != nil {
+		return nil, err
+	}
+
+	// 保存到数据库
+	if err := s.db.Create(user).Error; err != nil {
+		return nil, err
+	}
+
+	if req.SendWelcomeEmail == true {
+		// todo 接入kafka 发送欢迎email
+	}
+
+	return user, nil
+}
