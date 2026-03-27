@@ -1,4 +1,4 @@
-package jwt
+﻿package jwt
 
 import (
 	"errors"
@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	ErrInvalidToken = errors.New("无效的token")
-	ErrExpiredToken = errors.New("token已过期")
+	ErrInvalidToken = errors.New("鏃犳晥鐨則oken")
+	ErrExpiredToken = errors.New("token宸茶繃鏈?)
 )
 
 type Claims struct {
@@ -38,7 +38,7 @@ func NewJWTManager(cfg config.JWTConfig) *JWTManager {
 	}
 }
 
-// GenerateAccessToken 生成访问令牌
+// GenerateAccessToken 鐢熸垚璁块棶浠ょ墝
 func (m *JWTManager) GenerateAccessToken(user *models.User) (string, error) {
 	claims := Claims{
 		UserID:   user.ID,
@@ -57,7 +57,7 @@ func (m *JWTManager) GenerateAccessToken(user *models.User) (string, error) {
 	return token.SignedString([]byte(m.secretKey))
 }
 
-// GenerateRefreshToken 生成刷新令牌
+// GenerateRefreshToken 鐢熸垚鍒锋柊浠ょ墝
 func (m *JWTManager) GenerateRefreshToken(user *models.User) (string, error) {
 	claims := Claims{
 		UserID:   user.ID,
@@ -76,7 +76,7 @@ func (m *JWTManager) GenerateRefreshToken(user *models.User) (string, error) {
 	return token.SignedString([]byte(m.secretKey))
 }
 
-// VerifyToken 验证令牌
+// VerifyToken 楠岃瘉浠ょ墝
 func (m *JWTManager) VerifyToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -99,19 +99,19 @@ func (m *JWTManager) VerifyToken(tokenString string) (*Claims, error) {
 	return nil, ErrInvalidToken
 }
 
-// RefreshAccessToken 刷新访问令牌
+// RefreshAccessToken 鍒锋柊璁块棶浠ょ墝
 func (m *JWTManager) RefreshAccessToken(refreshToken string) (string, *Claims, error) {
 	claims, err := m.VerifyToken(refreshToken)
 	if err != nil {
 		return "", nil, err
 	}
 
-	// 检查是否是刷新令牌
+	// 妫€鏌ユ槸鍚︽槸鍒锋柊浠ょ墝
 	if claims.Subject != fmt.Sprintf("refresh-%d", claims.UserID) {
 		return "", nil, ErrInvalidToken
 	}
 
-	// 生成新的访问令牌
+	// 鐢熸垚鏂扮殑璁块棶浠ょ墝
 	newClaims := Claims{
 		UserID:   claims.UserID,
 		Username: claims.Username,
@@ -134,8 +134,7 @@ func (m *JWTManager) RefreshAccessToken(refreshToken string) (string, *Claims, e
 	return accessToken, claims, nil
 }
 
-// GenerateTokens 生成访问令牌和刷新令牌
-func (m *JWTManager) GenerateTokens(user *models.User) (accessToken, refreshToken string, err error) {
+// GenerateTokens 鐢熸垚璁块棶浠ょ墝鍜屽埛鏂颁护鐗?func (m *JWTManager) GenerateTokens(user *models.User) (accessToken, refreshToken string, err error) {
 	accessToken, err = m.GenerateAccessToken(user)
 	if err != nil {
 		return "", "", err
@@ -149,8 +148,7 @@ func (m *JWTManager) GenerateTokens(user *models.User) (accessToken, refreshToke
 	return accessToken, refreshToken, nil
 }
 
-// ParseToken 解析令牌（不验证过期）
-func (m *JWTManager) ParseToken(tokenString string) (*Claims, error) {
+// ParseToken 瑙ｆ瀽浠ょ墝锛堜笉楠岃瘉杩囨湡锛?func (m *JWTManager) ParseToken(tokenString string) (*Claims, error) {
 	parser := jwt.NewParser(jwt.WithoutClaimsValidation())
 	token, err := parser.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -170,7 +168,7 @@ func (m *JWTManager) ParseToken(tokenString string) (*Claims, error) {
 	return nil, ErrInvalidToken
 }
 
-// GetTokenDuration 获取令牌剩余时间
+// GetTokenDuration 鑾峰彇浠ょ墝鍓╀綑鏃堕棿
 func (m *JWTManager) GetTokenDuration(tokenString string) (time.Duration, error) {
 	claims, err := m.ParseToken(tokenString)
 	if err != nil {
@@ -178,7 +176,7 @@ func (m *JWTManager) GetTokenDuration(tokenString string) (time.Duration, error)
 	}
 
 	if claims.ExpiresAt == nil {
-		return 0, errors.New("token没有过期时间")
+		return 0, errors.New("token娌℃湁杩囨湡鏃堕棿")
 	}
 
 	remaining := time.Until(claims.ExpiresAt.Time)

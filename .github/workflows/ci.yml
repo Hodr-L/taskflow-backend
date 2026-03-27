@@ -1,4 +1,4 @@
-name: Backend CI - Simplified
+﻿name: Backend CI - Simplified
 
 on:
   push:
@@ -37,21 +37,21 @@ jobs:
 
       - name: Check code formatting
         run: |
-          echo "检查代码格式..."
-          # 先删除可能存在的旧文件
+          echo "妫€鏌ヤ唬鐮佹牸寮?.."
+          # 鍏堝垹闄ゅ彲鑳藉瓨鍦ㄧ殑鏃ф枃浠?
           rm -f gofmt-output.txt
           gofmt -l . | tee gofmt-output.txt
           if [ -s gofmt-output.txt ]; then
-            echo "❌ 代码格式需要调整，运行: gofmt -w ."
+            echo "鉂?浠ｇ爜鏍煎紡闇€瑕佽皟鏁达紝杩愯: gofmt -w ."
             exit 1
           else
-            echo "✅ 代码格式良好"
+            echo "鉁?浠ｇ爜鏍煎紡鑹ソ"
           fi
 
       - name: Run go vet
         run: |
-          echo "运行go vet检查..."
-          go vet ./... && echo "✅ go vet检查通过" || echo "⚠️ go vet发现问题"
+          echo "杩愯go vet妫€鏌?.."
+          go vet ./... && echo "鉁?go vet妫€鏌ラ€氳繃" || echo "鈿狅笍 go vet鍙戠幇闂"
 
   test:
     runs-on: ubuntu-latest
@@ -67,8 +67,8 @@ jobs:
 
       - name: Run tests
         run: |
-          echo "运行测试..."
-          go test ./... -v 2>&1 | tail -50 || echo "测试执行完成"
+          echo "杩愯娴嬭瘯..."
+          go test ./... -v 2>&1 | tail -50 || echo "娴嬭瘯鎵ц瀹屾垚"
 
   build:
     runs-on: ubuntu-latest
@@ -84,27 +84,27 @@ jobs:
 
       - name: Build API server
         run: |
-          echo "构建API服务器..."
+          echo "鏋勫缓API鏈嶅姟鍣?.."
           if go build -o taskflow-api ./cmd/main.go; then
-            echo "✅ API服务器构建成功"
-            # 只验证可执行文件存在，不运行服务
+            echo "鉁?API鏈嶅姟鍣ㄦ瀯寤烘垚鍔?
+            # 鍙獙璇佸彲鎵ц鏂囦欢瀛樺湪锛屼笉杩愯鏈嶅姟
             if [ -f "taskflow-api" ]; then
-              echo "可执行文件大小: $(du -h taskflow-api | cut -f1)"
-              echo "构建验证完成"
+              echo "鍙墽琛屾枃浠跺ぇ灏? $(du -h taskflow-api | cut -f1)"
+              echo "鏋勫缓楠岃瘉瀹屾垚"
             fi
           else
-            echo "❌ API服务器构建失败"
+            echo "鉂?API鏈嶅姟鍣ㄦ瀯寤哄け璐?
             exit 1
           fi
 
       - name: Build consumer service (optional)
         run: |
-          echo "构建Kafka消费者服务（可选）..."
+          echo "鏋勫缓Kafka娑堣垂鑰呮湇鍔★紙鍙€夛級..."
           if go build -o taskflow-consumer ./cmd/consumer/main.go; then
-            echo "✅ 消费者服务构建成功"
+            echo "鉁?娑堣垂鑰呮湇鍔℃瀯寤烘垚鍔?
             if [ -f "taskflow-consumer" ]; then
-              echo "可执行文件大小: $(du -h taskflow-consumer | cut -f1)"
+              echo "鍙墽琛屾枃浠跺ぇ灏? $(du -h taskflow-consumer | cut -f1)"
             fi
           else
-            echo "⚠️ 消费者服务构建失败（跳过，可能是预期行为）"
+            echo "鈿狅笍 娑堣垂鑰呮湇鍔℃瀯寤哄け璐ワ紙璺宠繃锛屽彲鑳芥槸棰勬湡琛屼负锛?
           fi

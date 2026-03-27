@@ -1,4 +1,4 @@
-package models
+﻿package models
 
 import (
 	"time"
@@ -17,7 +17,7 @@ type Attachment struct {
 	CreatedAt   time.Time      `json:"created_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
-	// 关联关系
+	// 鍏宠仈鍏崇郴
 	Task *Task `gorm:"foreignKey:TaskID" json:"task,omitempty"`
 	User *User `gorm:"foreignKey:UserID" json:"user,omitempty"`
 }

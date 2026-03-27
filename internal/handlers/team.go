@@ -1,4 +1,4 @@
-package handlers
+﻿package handlers
 
 import (
 	"github.com/gin-gonic/gin"
@@ -19,31 +19,30 @@ func NewTeamHandler(db *gorm.DB) *TeamHandler {
 	}
 }
 
-// CreateTeam 创建团队w
+// CreateTeam 鍒涘缓鍥㈤槦w
 func (h *TeamHandler) CreateTeam(c *gin.Context) {
-	// TODO: 实现创建团队逻辑
+	// TODO: 瀹炵幇鍒涘缓鍥㈤槦閫昏緫
 }
 
 func (h *TeamHandler) GetListTeams(c *gin.Context) {
-	// TODO: 实现获取团队列表逻辑
+	// TODO: 瀹炵幇鑾峰彇鍥㈤槦鍒楄〃閫昏緫
 }
 
-// GetTeams 获取团队列表
+// GetTeams 鑾峰彇鍥㈤槦鍒楄〃
 func (h *TeamHandler) GetTeams(c *gin.Context) {
-	// TODO: 获取用户参与的团队列表
-}
+	// TODO: 鑾峰彇鐢ㄦ埛鍙備笌鐨勫洟闃熷垪琛?}
 
-// GetTeam 获取团队详情
+// GetTeam 鑾峰彇鍥㈤槦璇︽儏
 func (h *TeamHandler) GetTeam(c *gin.Context) {
-	// TODO: 实现获取团队详情逻辑
+	// TODO: 瀹炵幇鑾峰彇鍥㈤槦璇︽儏閫昏緫
 }
 
-// UpdateTeam 更新团队
+// UpdateTeam 鏇存柊鍥㈤槦
 func (h *TeamHandler) UpdateTeam(c *gin.Context) {
-	// TODO: 实现更新团队逻辑
+	// TODO: 瀹炵幇鏇存柊鍥㈤槦閫昏緫
 }
 
-// DeleteTeam 删除团队
+// DeleteTeam 鍒犻櫎鍥㈤槦
 func (h *TeamHandler) DeleteTeam(c *gin.Context) {
-	// TODO: 实现删除团队逻辑
+	// TODO: 瀹炵幇鍒犻櫎鍥㈤槦閫昏緫
 }

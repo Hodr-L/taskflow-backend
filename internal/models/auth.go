@@ -1,6 +1,6 @@
-package models
+﻿package models
 
-// AuthResponse 认证响应
+// AuthResponse 璁よ瘉鍝嶅簲
 type AuthResponse struct {
 	AccessToken  string      `json:"access_token"`
 	RefreshToken string      `json:"refresh_token,omitempty"`

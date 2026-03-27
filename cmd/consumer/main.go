@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 	"context"
@@ -26,80 +26,74 @@ const (
 )
 
 func main() {
-	// 解析命令行参数
-	consumerType := flag.String("type", "notification", "消费者类型: notification, audit")
+	// 瑙ｆ瀽鍛戒护琛屽弬鏁?	consumerType := flag.String("type", "notification", "娑堣垂鑰呯被鍨? notification, audit")
 	flag.Parse()
 
-	// 加载配置
+	// 鍔犺浇閰嶇疆
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("❌ 加载配置失败: %v", err)
+		log.Fatalf("鉂?鍔犺浇閰嶇疆澶辫触: %v", err)
 	}
 
-	// 初始化日志
-	logger.Init(cfg.Log.Level, cfg.Log.Format)
+	// 鍒濆鍖栨棩蹇?	logger.Init(cfg.Log.Level, cfg.Log.Format)
 
-	logger.Info("🚀 启动 Kafka 消费者服务",
+	logger.Info("馃殌 鍚姩 Kafka 娑堣垂鑰呮湇鍔?,
 		zap.String("type", *consumerType),
 		zap.String("env", cfg.App.Env),
 	)
 
-	// 连接数据库
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=%t&loc=%s",
+	// 杩炴帴鏁版嵁搴?	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=%t&loc=%s",
 		cfg.Database.User, cfg.Database.Password, cfg.Database.Host, cfg.Database.Port,
 		cfg.Database.Name, cfg.Database.Charset, cfg.Database.ParseTime, cfg.Database.Loc)
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		logger.Fatal("❌ 数据库连接失败", logger.ErrorField(err))
+		logger.Fatal("鉂?鏁版嵁搴撹繛鎺ュけ璐?, logger.ErrorField(err))
 	}
 
-	// 根据消费者类型设置主题
-	var topics []string
+	// 鏍规嵁娑堣垂鑰呯被鍨嬭缃富棰?	var topics []string
 	var groupID string
 
 	switch ConsumerType(*consumerType) {
 	case ConsumerNotification:
 		topics = []string{"user-registered", "task-created", "task-updated", "comment-added"}
 		groupID = "notification-consumer-group"
-		logger.Info("📨 启动通知消费者", zap.Strings("topics", topics))
+		logger.Info("馃摠 鍚姩閫氱煡娑堣垂鑰?, zap.Strings("topics", topics))
 
 	case ConsumerAudit:
 		topics = []string{"user-login", "user-action", "task-operation", "file-upload"}
 		groupID = "audit-consumer-group"
-		logger.Info("📊 启动审计消费者", zap.Strings("topics", topics))
+		logger.Info("馃搳 鍚姩瀹¤娑堣垂鑰?, zap.Strings("topics", topics))
 
 	default:
-		logger.Fatal("❌ 未知的消费者类型", zap.String("type", *consumerType))
+		logger.Fatal("鉂?鏈煡鐨勬秷璐硅€呯被鍨?, zap.String("type", *consumerType))
 	}
 
-	// 创建Kafka消费者
-	reader := kafka.NewReader(kafka.ReaderConfig{
+	// 鍒涘缓Kafka娑堣垂鑰?	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:  cfg.Kafka.Brokers,
 		GroupID:  groupID,
-		Topic:    topics[0], // 暂时只监听一个主题，可以扩展为多个
-		MinBytes: 10e3,      // 10KB
+		Topic:    topics[0], // 鏆傛椂鍙洃鍚竴涓富棰橈紝鍙互鎵╁睍涓哄涓?		MinBytes: 10e3,      // 10KB
 		MaxBytes: 10e6,      // 10MB
 		MaxWait:  1 * time.Second,
 	})
 
 	defer reader.Close()
 
-	logger.Info("✅ Kafka消费者已连接",
+	logger.Info("鉁?Kafka娑堣垂鑰呭凡杩炴帴",
 		zap.Strings("brokers", cfg.Kafka.Brokers),
 		zap.String("topic", topics[0]),
 		zap.String("group_id", groupID),
 	)
 
-	// 处理中断信号
+	// 澶勭悊涓柇淇″彿
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	// 消费消息
+	// 娑堣垂娑堟伅
 	for {
 		select {
 		case <-ctx.Done():
-			logger.Info("🛑 收到停止信号，关闭消费者")
+			logger.Info("馃洃 鏀跺埌鍋滄淇″彿锛屽叧闂秷璐硅€?)
 			return
 		default:
 			msg, err := reader.ReadMessage(ctx)
@@ -107,18 +101,18 @@ func main() {
 				if err == context.Canceled {
 					return
 				}
-				logger.Error("❌ 读取消息失败", logger.ErrorField(err))
+				logger.Error("鉂?璇诲彇娑堟伅澶辫触", logger.ErrorField(err))
 				continue
 			}
 
-			// 处理消息
+			// 澶勭悊娑堟伅
 			processMessage(ConsumerType(*consumerType), msg, db)
 		}
 	}
 }
 
 func processMessage(consumerType ConsumerType, msg kafka.Message, db *gorm.DB) {
-	logger.Info("📩 收到消息",
+	logger.Info("馃摡 鏀跺埌娑堟伅",
 		zap.String("topic", msg.Topic),
 		zap.Int("partition", msg.Partition),
 		zap.Int64("offset", msg.Offset),
@@ -127,8 +121,7 @@ func processMessage(consumerType ConsumerType, msg kafka.Message, db *gorm.DB) {
 		zap.Time("time", msg.Time),
 	)
 
-	// 根据消费者类型处理消息
-	switch consumerType {
+	// 鏍规嵁娑堣垂鑰呯被鍨嬪鐞嗘秷鎭?	switch consumerType {
 	case ConsumerNotification:
 		handleNotification(msg, db)
 	case ConsumerAudit:
@@ -137,25 +130,23 @@ func processMessage(consumerType ConsumerType, msg kafka.Message, db *gorm.DB) {
 }
 
 func handleNotification(msg kafka.Message, db *gorm.DB) {
-	// TODO: 实现通知处理逻辑
-	logger.Info("🔔 处理通知消息", zap.String("topic", msg.Topic))
+	// TODO: 瀹炵幇閫氱煡澶勭悊閫昏緫
+	logger.Info("馃敂 澶勭悊閫氱煡娑堟伅", zap.String("topic", msg.Topic))
 
-	// 示例：将通知存入数据库
-	// notification := models.Notification{
+	// 绀轰緥锛氬皢閫氱煡瀛樺叆鏁版嵁搴?	// notification := models.Notification{
 	//     UserID:  parseUserIdFromMessage(msg),
 	//     Type:    msg.Topic,
-	//     Title:   "新通知",
+	//     Title:   "鏂伴€氱煡",
 	//     Content: string(msg.Value),
 	// }
 	// db.Create(&notification)
 }
 
 func handleAudit(msg kafka.Message, db *gorm.DB) {
-	// TODO: 实现审计日志处理逻辑
-	logger.Info("📝 处理审计消息", zap.String("topic", msg.Topic))
+	// TODO: 瀹炵幇瀹¤鏃ュ織澶勭悊閫昏緫
+	logger.Info("馃摑 澶勭悊瀹¤娑堟伅", zap.String("topic", msg.Topic))
 
-	// 示例：将审计日志存入数据库
-	// auditLog := models.AuditLog{
+	// 绀轰緥锛氬皢瀹¤鏃ュ織瀛樺叆鏁版嵁搴?	// auditLog := models.AuditLog{
 	//     Action:    msg.Topic,
 	//     UserID:    parseUserIdFromMessage(msg),
 	//     Details:   string(msg.Value),

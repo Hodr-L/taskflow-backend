@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 	"context"
@@ -18,98 +18,93 @@ import (
 )
 
 func main() {
-	// 1. 加载配置
+	// 1. 鍔犺浇閰嶇疆
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("❌ 加载配置失败: %v", err)
+		log.Fatalf("鉂?鍔犺浇閰嶇疆澶辫触: %v", err)
 	}
 
-	// 2. 初始化日志
-	logger.Init(cfg.Log.Level, cfg.Log.Format)
-	logger.Info("🚀 启动 TaskFlow 后端服务",
+	// 2. 鍒濆鍖栨棩蹇?	logger.Init(cfg.Log.Level, cfg.Log.Format)
+	logger.Info("馃殌 鍚姩 TaskFlow 鍚庣鏈嶅姟",
 		zap.String("env", cfg.App.Env),
 		zap.String("version", cfg.App.Version),
 		zap.Int("port", cfg.Server.Port),
 	)
 
-	// 3. 连接数据库
-	db, err := database.Connect(cfg.Database)
+	// 3. 杩炴帴鏁版嵁搴?	db, err := database.Connect(cfg.Database)
 	if err != nil {
-		logger.Error("⚠️ 数据库连接失败，使用模拟数据库", logger.ErrorField(err))
-		// 创建模拟的数据库连接，让服务至少能启动
-		db = nil
+		logger.Error("鈿狅笍 鏁版嵁搴撹繛鎺ュけ璐ワ紝浣跨敤妯℃嫙鏁版嵁搴?, logger.ErrorField(err))
+		// 鍒涘缓妯℃嫙鐨勬暟鎹簱杩炴帴锛岃鏈嶅姟鑷冲皯鑳藉惎鍔?		db = nil
 	} else {
 
 		defer func() {
 			if err := database.Close(); err != nil {
-				logger.Error("关闭数据库连接失败", logger.ErrorField(err))
+				logger.Error("鍏抽棴鏁版嵁搴撹繛鎺ュけ璐?, logger.ErrorField(err))
 			} else {
-				logger.Info("✅ 数据库连接已关闭")
+				logger.Info("鉁?鏁版嵁搴撹繛鎺ュ凡鍏抽棴")
 			}
 		}()
 
-		// 4. 自动迁移数据库表（仅开发环境）
+		// 4. 鑷姩杩佺Щ鏁版嵁搴撹〃锛堜粎寮€鍙戠幆澧冿級
 		if cfg.App.Env == "development" {
-			logger.Info("🔄 正在自动迁移数据库表...")
+			logger.Info("馃攧 姝ｅ湪鑷姩杩佺Щ鏁版嵁搴撹〃...")
 			if err := database.AutoMigrate(db); err != nil {
-				logger.Error("❌ 数据库迁移失败", logger.ErrorField(err))
+				logger.Error("鉂?鏁版嵁搴撹縼绉诲け璐?, logger.ErrorField(err))
 			} else {
-				logger.Info("✅ 数据库迁移完成")
+				logger.Info("鉁?鏁版嵁搴撹縼绉诲畬鎴?)
 			}
 		}
 	}
 
-	// 5. 连接Redis
+	// 5. 杩炴帴Redis
 	redisClient, err := database.ConnectRedis(cfg.Redis)
 	if err != nil {
-		logger.Error("⚠️ Redis连接失败", logger.ErrorField(err))
-		// 可以选择继续启动，但黑名单功能将不可用
-		logger.Warn("黑名单功能将不可用")
+		logger.Error("鈿狅笍 Redis杩炴帴澶辫触", logger.ErrorField(err))
+		// 鍙互閫夋嫨缁х画鍚姩锛屼絾榛戝悕鍗曞姛鑳藉皢涓嶅彲鐢?		logger.Warn("榛戝悕鍗曞姛鑳藉皢涓嶅彲鐢?)
 	} else {
 		defer func() {
 			if err := database.CloseRedis(); err != nil {
-				logger.Error("关闭Redis连接失败", logger.ErrorField(err))
+				logger.Error("鍏抽棴Redis杩炴帴澶辫触", logger.ErrorField(err))
 			}
 		}()
 
-		// Redis健康检查
-		go func() {
+		// Redis鍋ュ悍妫€鏌?		go func() {
 			ticker := time.NewTicker(30 * time.Second)
 			defer ticker.Stop()
 
 			for range ticker.C {
 				if err := database.RedisHealthCheck(); err != nil {
-					logger.Error("Redis健康检查失败", logger.ErrorField(err))
+					logger.Error("Redis鍋ュ悍妫€鏌ュけ璐?, logger.ErrorField(err))
 				}
 			}
 		}()
 	}
 
-	// 5. 创建HTTP服务器
-	srv := server.New(cfg, db, redisClient)
+	// 5. 鍒涘缓HTTP鏈嶅姟鍣?	srv := server.New(cfg, db, redisClient)
 
-	// 6. 启动服务器（在goroutine中）
+	// 6. 鍚姩鏈嶅姟鍣紙鍦╣oroutine涓級
 	go func() {
-		logger.Info("🌐 启动HTTP服务器", zap.Int("port", cfg.Server.Port))
+		logger.Info("馃寪 鍚姩HTTP鏈嶅姟鍣?, zap.Int("port", cfg.Server.Port))
 		if err := srv.Start(); err != nil && err != http.ErrServerClosed {
-			logger.Fatal("❌ 服务器启动失败", logger.ErrorField(err))
+			logger.Fatal("鉂?鏈嶅姟鍣ㄥ惎鍔ㄥけ璐?, logger.ErrorField(err))
 		}
 	}()
 
-	// 7. 等待中断信号
+	// 7. 绛夊緟涓柇淇″彿
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	logger.Info("🛑 收到停止信号，正在关闭服务...")
+	logger.Info("馃洃 鏀跺埌鍋滄淇″彿锛屾鍦ㄥ叧闂湇鍔?..")
 
-	// 8. 优雅关闭
+	// 8. 浼橀泤鍏抽棴
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		logger.Error("❌ 服务器关闭失败", logger.ErrorField(err))
+		logger.Error("鉂?鏈嶅姟鍣ㄥ叧闂け璐?, logger.ErrorField(err))
 	}
 
-	logger.Info("👋 服务已安全退出")
+	logger.Info("馃憢 鏈嶅姟宸插畨鍏ㄩ€€鍑?)
 }
+

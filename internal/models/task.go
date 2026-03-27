@@ -1,4 +1,4 @@
-package models
+﻿package models
 
 import (
 	"time"
@@ -24,29 +24,29 @@ type Task struct {
 	CompletedAt    *time.Time     `json:"completed_at,omitempty"`
 	DeletedAt      gorm.DeletedAt `gorm:"index" json:"-"`
 
-	// 关联关系
+	// 鍏宠仈鍏崇郴
 	Project  *Project `gorm:"foreignKey:ProjectID" json:"project,omitempty"`
 	Assignee *User    `gorm:"foreignKey:AssigneeID" json:"assignee,omitempty"`
 	Reporter *User    `gorm:"foreignKey:ReporterID" json:"reporter,omitempty"`
 }
 
-// TableName 指定表名
+// TableName 鎸囧畾琛ㄥ悕
 func (Task) TableName() string {
 	return "tasks"
 }
 
-// BeforeCreate 创建前的钩子
+// BeforeCreate 鍒涘缓鍓嶇殑閽╁瓙
 func (t *Task) BeforeCreate(tx *gorm.DB) error {
 	t.CreatedAt = time.Now()
 	t.UpdatedAt = time.Now()
 	return nil
 }
 
-// BeforeUpdate 更新前的钩子
+// BeforeUpdate 鏇存柊鍓嶇殑閽╁瓙
 func (t *Task) BeforeUpdate(tx *gorm.DB) error {
 	t.UpdatedAt = time.Now()
 
-	// 如果状态变为完成，设置完成时间
+	// 濡傛灉鐘舵€佸彉涓哄畬鎴愶紝璁剧疆瀹屾垚鏃堕棿
 	if t.Status == "done" && t.CompletedAt == nil {
 		now := time.Now()
 		t.CompletedAt = &now

@@ -1,4 +1,4 @@
-package handlers
+﻿package handlers
 
 import (
 	"time"
@@ -26,13 +26,12 @@ func NewAuthHandler(db *gorm.DB, jwtManager *jwt.JWTManager) *AuthHandler {
 	}
 }
 
-// Register 用户注册
-// @Summary 用户注册
-// @Description 创建新用户账户
-// @Tags 认证
+// Register 鐢ㄦ埛娉ㄥ唽
+// @Summary 鐢ㄦ埛娉ㄥ唽
+// @Description 鍒涘缓鏂扮敤鎴疯处鎴?// @Tags 璁よ瘉
 // @Accept json
 // @Produce json
-// @Param request body models.UserCreateRequest true "注册信息"
+// @Param request body models.UserCreateRequest true "娉ㄥ唽淇℃伅"
 // @Success 201 {object} Response{data=models.AuthResponse}
 // @Failure 400 {object} ErrorResponse
 // @Failure 409 {object} ErrorResponse
@@ -41,54 +40,53 @@ func NewAuthHandler(db *gorm.DB, jwtManager *jwt.JWTManager) *AuthHandler {
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req models.UserCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		logger.Warn("注册参数验证失败", logger.ErrorField(err))
-		BadRequest(c, "参数验证失败", err)
+		logger.Warn("娉ㄥ唽鍙傛暟楠岃瘉澶辫触", logger.ErrorField(err))
+		BadRequest(c, "鍙傛暟楠岃瘉澶辫触", err)
 		return
 	}
 
-	// 创建用户
+	// 鍒涘缓鐢ㄦ埛
 	user, err := h.authService.Register(req.Username, req.Email, req.Password)
 	if err != nil {
 		switch err {
 		case services.ErrUserExists:
-			Conflict(c, "用户已存在")
+			Conflict(c, "鐢ㄦ埛宸插瓨鍦?)
 		case services.ErrInvalidInput:
-			BadRequest(c, "无效的输入")
+			BadRequest(c, "鏃犳晥鐨勮緭鍏?)
 		default:
-			InternalServerError(c, "注册失败", err)
+			InternalServerError(c, "娉ㄥ唽澶辫触", err)
 		}
 		return
 	}
 
-	// 生成JWT令牌
+	// 鐢熸垚JWT浠ょ墝
 	accessToken, refreshToken, err := h.jwtManager.GenerateTokens(user)
 	if err != nil {
-		InternalServerError(c, "生成令牌失败", err)
+		InternalServerError(c, "鐢熸垚浠ょ墝澶辫触", err)
 		return
 	}
 
-	// 更新最后登录时间
-	user.UpdateLastLogin()
+	// 鏇存柊鏈€鍚庣櫥褰曟椂闂?	user.UpdateLastLogin()
 	h.db.Save(user)
 
 	response := models.AuthResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		TokenType:    "Bearer",
-		ExpiresIn:    int64(24 * time.Hour.Seconds()), // 24小时
+		ExpiresIn:    int64(24 * time.Hour.Seconds()), // 24灏忔椂
 		User:         user.ToResponse(),
 	}
 
-	Created(c, "成功", response)
+	Created(c, "鎴愬姛", response)
 }
 
-// Login 用户登录
-// @Summary 用户登录
-// @Description 用户登录获取访问令牌
-// @Tags 认证
+// Login 鐢ㄦ埛鐧诲綍
+// @Summary 鐢ㄦ埛鐧诲綍
+// @Description 鐢ㄦ埛鐧诲綍鑾峰彇璁块棶浠ょ墝
+// @Tags 璁よ瘉
 // @Accept json
 // @Produce json
-// @Param request body models.UserLoginRequest true "登录信息"
+// @Param request body models.UserLoginRequest true "鐧诲綍淇℃伅"
 // @Success 200 {object} Response{data=models.AuthResponse}
 // @Failure 400 {object} ErrorResponse
 // @Failure 401 {object} ErrorResponse
@@ -97,36 +95,35 @@ func (h *AuthHandler) Register(c *gin.Context) {
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req models.UserLoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		logger.Warn("登录参数验证失败", logger.ErrorField(err))
-		BadRequest(c, "参数验证失败", err)
+		logger.Warn("鐧诲綍鍙傛暟楠岃瘉澶辫触", logger.ErrorField(err))
+		BadRequest(c, "鍙傛暟楠岃瘉澶辫触", err)
 		return
 	}
 
-	// 验证用户
+	// 楠岃瘉鐢ㄦ埛
 	user, err := h.authService.Login(req.Email, req.Password)
 	if err != nil {
 		switch err {
 		case services.ErrUserNotFound:
-			NotFound(c, "用户不存在")
+			NotFound(c, "鐢ㄦ埛涓嶅瓨鍦?)
 		case services.ErrInvalidCredentials:
-			Unauthorized(c, "用户名或密码错误")
+			Unauthorized(c, "鐢ㄦ埛鍚嶆垨瀵嗙爜閿欒")
 		case services.ErrUserInactive:
-			Unauthorized(c, "账户已被禁用")
+			Unauthorized(c, "璐︽埛宸茶绂佺敤")
 		default:
-			InternalServerError(c, "登录失败", err)
+			InternalServerError(c, "鐧诲綍澶辫触", err)
 		}
 		return
 	}
 
-	// 生成JWT令牌
+	// 鐢熸垚JWT浠ょ墝
 	accessToken, refreshToken, err := h.jwtManager.GenerateTokens(user)
 	if err != nil {
-		InternalServerError(c, "生成令牌失败", err)
+		InternalServerError(c, "鐢熸垚浠ょ墝澶辫触", err)
 		return
 	}
 
-	// 更新最后登录时间
-	user.UpdateLastLogin()
+	// 鏇存柊鏈€鍚庣櫥褰曟椂闂?	user.UpdateLastLogin()
 	h.db.Save(user)
 
 	response := models.AuthResponse{
@@ -137,16 +134,16 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		User:         user.ToResponse(),
 	}
 
-	Success(c, "登录成功", response)
+	Success(c, "鐧诲綍鎴愬姛", response)
 }
 
-// RefreshToken 刷新访问令牌
-// @Summary 刷新访问令牌
-// @Description 使用刷新令牌获取新的访问令牌
-// @Tags 认证
+// RefreshToken 鍒锋柊璁块棶浠ょ墝
+// @Summary 鍒锋柊璁块棶浠ょ墝
+// @Description 浣跨敤鍒锋柊浠ょ墝鑾峰彇鏂扮殑璁块棶浠ょ墝
+// @Tags 璁よ瘉
 // @Accept json
 // @Produce json
-// @Param request body RefreshTokenRequest true "刷新令牌"
+// @Param request body RefreshTokenRequest true "鍒锋柊浠ょ墝"
 // @Success 200 {object} Response{data=RefreshTokenResponse}
 // @Failure 400 {object} ErrorResponse
 // @Failure 401 {object} ErrorResponse
@@ -154,7 +151,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	var req RefreshTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		BadRequest(c, "参数验证失败", err)
+		BadRequest(c, "鍙傛暟楠岃瘉澶辫触", err)
 		return
 	}
 
@@ -162,11 +159,11 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	if err != nil {
 		switch err {
 		case jwt.ErrExpiredToken:
-			Unauthorized(c, "刷新令牌已过期")
+			Unauthorized(c, "鍒锋柊浠ょ墝宸茶繃鏈?)
 		case jwt.ErrInvalidToken:
-			Unauthorized(c, "无效的刷新令牌")
+			Unauthorized(c, "鏃犳晥鐨勫埛鏂颁护鐗?)
 		default:
-			InternalServerError(c, "刷新令牌失败", err)
+			InternalServerError(c, "鍒锋柊浠ょ墝澶辫触", err)
 		}
 		return
 	}
@@ -179,10 +176,10 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 		Username:    claims.Username,
 	}
 
-	Success(c, "令牌刷新成功", response)
+	Success(c, "浠ょ墝鍒锋柊鎴愬姛", response)
 }
 
-// 请求和响应结构体
+// 璇锋眰鍜屽搷搴旂粨鏋勪綋
 type RefreshTokenRequest struct {
 	RefreshToken string `json:"refresh_token" binding:"required"`
 }

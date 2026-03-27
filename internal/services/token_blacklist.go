@@ -1,4 +1,4 @@
-package services
+﻿package services
 
 import (
 	"fmt"
@@ -23,40 +23,37 @@ func NewTokenBlacklistService(redisClient *redis.Client, jwtManager *jwt.JWTMana
 	}
 }
 
-// AddToBlacklist 将 token 加入黑名单
-func (s *TokenBlacklistService) AddToBlacklist(ctx *gin.Context, token string) error {
-	// 解析 token 获取过期时间
+// AddToBlacklist 灏?token 鍔犲叆榛戝悕鍗?func (s *TokenBlacklistService) AddToBlacklist(ctx *gin.Context, token string) error {
+	// 瑙ｆ瀽 token 鑾峰彇杩囨湡鏃堕棿
 	claims, err := s.jwtManager.ParseToken(token)
 	if err != nil {
-		return fmt.Errorf("token 解析失败: %w", err)
+		return fmt.Errorf("token 瑙ｆ瀽澶辫触: %w", err)
 	}
 
-	// 如果 token 已经过期，不需要加入黑名单
+	// 濡傛灉 token 宸茬粡杩囨湡锛屼笉闇€瑕佸姞鍏ラ粦鍚嶅崟
 	expTime := time.Unix(claims.ExpiresAt.Unix(), 0)
 	if expTime.Before(time.Now()) {
 		return nil
 	}
 
-	// 计算剩余时间
+	// 璁＄畻鍓╀綑鏃堕棿
 	ttl := time.Until(expTime)
 
-	// 使用 token 本身作为 key
+	// 浣跨敤 token 鏈韩浣滀负 key
 	key := fmt.Sprintf("token:blacklist:%s", token)
 
-	// 或者使用 jti（如果 JWT 中有 JWT ID）
-	// key := fmt.Sprintf("token:blacklist:%s", claims.JTI)
+	// 鎴栬€呬娇鐢?jti锛堝鏋?JWT 涓湁 JWT ID锛?	// key := fmt.Sprintf("token:blacklist:%s", claims.JTI)
 
-	logger.Info("token已加入黑名单",
+	logger.Info("token宸插姞鍏ラ粦鍚嶅崟",
 		zap.Uint("user_id", claims.UserID),
 		zap.String("username", claims.Username),
-		zap.String("token", token[:20]+"..."), // 只记录部分 token
+		zap.String("token", token[:20]+"..."), // 鍙褰曢儴鍒?token
 		zap.Duration("ttl", ttl),
 	)
 	return s.redisClient.SetEX(ctx, key, "blacklisted", ttl).Err()
 }
 
-// IsBlacklisted 检查 token 是否在黑名单中
-func (s *TokenBlacklistService) IsBlacklisted(ctx *gin.Context, token string) (bool, error) {
+// IsBlacklisted 妫€鏌?token 鏄惁鍦ㄩ粦鍚嶅崟涓?func (s *TokenBlacklistService) IsBlacklisted(ctx *gin.Context, token string) (bool, error) {
 	key := fmt.Sprintf("token:blacklist:%s", token)
 
 	exists, err := s.redisClient.Exists(ctx, key).Result()
@@ -67,9 +64,9 @@ func (s *TokenBlacklistService) IsBlacklisted(ctx *gin.Context, token string) (b
 	return exists > 0, nil
 }
 
-// LogoutUser 登出用户（可选：可以登出所有设备）
+// LogoutUser 鐧诲嚭鐢ㄦ埛锛堝彲閫夛細鍙互鐧诲嚭鎵€鏈夎澶囷級
 func (s *TokenBlacklistService) LogoutUser(ctx *gin.Context, userID uint) error {
-	// 记录用户登出时间，可以用来使该时间之前的所有 token 失效
+	// 璁板綍鐢ㄦ埛鐧诲嚭鏃堕棿锛屽彲浠ョ敤鏉ヤ娇璇ユ椂闂翠箣鍓嶇殑鎵€鏈?token 澶辨晥
 	key := fmt.Sprintf("user:logout:%d", userID)
 	return s.redisClient.Set(ctx, key, time.Now().Unix(), 24*time.Hour).Err()
 }

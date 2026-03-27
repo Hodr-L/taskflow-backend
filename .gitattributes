@@ -1,0 +1,28 @@
+# 设置所有文本文件使用CRLF行尾
+* text=auto eol=crlf
+
+# 确保这些文件始终被视为文本文件
+*.go text
+*.md text
+*.yaml text
+*.yml text
+*.json text
+*.sql text
+*.txt text
+*.bat text eol=crlf
+*.sh text eol=lf
+*.vue text
+*.ts text
+*.js text
+*.css text
+*.html text
+
+# 二进制文件
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.exe binary
+*.dll binary

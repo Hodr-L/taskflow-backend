@@ -1,4 +1,4 @@
-package routes
+﻿package routes
 
 import (
 	"taskflow-backend/internal/handlers"
@@ -8,21 +8,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// RegisterTaskRoutes 注册任务相关路由
+// RegisterTaskRoutes 娉ㄥ唽浠诲姟鐩稿叧璺敱
 func RegisterTaskRoutes(router *gin.RouterGroup, jwtManager *jwt.JWTManager, taskHandler *handlers.TaskHandler) {
-	// 任务路由组
-	tasks := router.Group("/tasks")
+	// 浠诲姟璺敱缁?	tasks := router.Group("/tasks")
 	tasks.Use(middleware.JWTAuth(jwtManager))
 	{
-		// TODO: 实现任务管理接口
+		// TODO: 瀹炵幇浠诲姟绠＄悊鎺ュ彛
 		// tasks.GET("", taskHandler.GetTasks)
 		// tasks.POST("", taskHandler.CreateTask)
 		// tasks.GET("/:id", taskHandler.GetTask)
 		// tasks.PUT("/:id", taskHandler.UpdateTask)
 		// tasks.DELETE("/:id", taskHandler.DeleteTask)
 
-		// TODO: 添加任务子功能路由
-		// tasks.POST("/:id/comments", taskHandler.AddComment)
+		// TODO: 娣诲姞浠诲姟瀛愬姛鑳借矾鐢?		// tasks.POST("/:id/comments", taskHandler.AddComment)
 		// tasks.GET("/:id/comments", taskHandler.GetComments)
 		// tasks.POST("/:id/attachments", taskHandler.UploadAttachment)
 		// tasks.GET("/:id/attachments", taskHandler.GetAttachments)

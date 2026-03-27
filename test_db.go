@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 	"fmt"
@@ -8,38 +8,37 @@ import (
 )
 
 func main() {
-	// 测试不同的连接字符串格式
+	// 娴嬭瘯涓嶅悓鐨勮繛鎺ュ瓧绗︿覆鏍煎紡
 	dsnFormats := []string{
-		// 格式1: 标准格式
+		// 鏍煎紡1: 鏍囧噯鏍煎紡
 		"host=localhost port=5432 user=taskflow password=taskflow123 dbname=taskflow sslmode=disable",
-		// 格式2: 带TimeZone
+		// 鏍煎紡2: 甯imeZone
 		"host=localhost port=5432 user=taskflow password=taskflow123 dbname=taskflow sslmode=disable TimeZone=Asia/Shanghai",
-		// 格式3: URL格式
+		// 鏍煎紡3: URL鏍煎紡
 		"postgres://taskflow:taskflow123@localhost:5432/taskflow?sslmode=disable",
-		// 格式4: 带连接参数
-		"host=localhost port=5432 user=taskflow password=taskflow123 dbname=taskflow sslmode=disable connect_timeout=10",
+		// 鏍煎紡4: 甯﹁繛鎺ュ弬鏁?		"host=localhost port=5432 user=taskflow password=taskflow123 dbname=taskflow sslmode=disable connect_timeout=10",
 	}
 
 	for i, dsn := range dsnFormats {
-		fmt.Printf("\n=== 测试格式 %d ===\n", i+1)
+		fmt.Printf("\n=== 娴嬭瘯鏍煎紡 %d ===\n", i+1)
 		fmt.Printf("DSN: %s\n", dsn)
 
 		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 		if err != nil {
-			fmt.Printf("❌ 连接失败: %v\n", err)
+			fmt.Printf("鉂?杩炴帴澶辫触: %v\n", err)
 			continue
 		}
 
 		sqlDB, err := db.DB()
 		if err != nil {
-			fmt.Printf("❌ 获取数据库实例失败: %v\n", err)
+			fmt.Printf("鉂?鑾峰彇鏁版嵁搴撳疄渚嬪け璐? %v\n", err)
 			continue
 		}
 
 		if err := sqlDB.Ping(); err != nil {
-			fmt.Printf("❌ Ping失败: %v\n", err)
+			fmt.Printf("鉂?Ping澶辫触: %v\n", err)
 		} else {
-			fmt.Printf("✅ 连接成功!\n")
+			fmt.Printf("鉁?杩炴帴鎴愬姛!\n")
 		}
 
 		sqlDB.Close()

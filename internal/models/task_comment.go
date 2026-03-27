@@ -1,4 +1,4 @@
-package models
+﻿package models
 
 import (
 	"time"
@@ -15,7 +15,7 @@ type TaskComment struct {
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 
-	// 关联关系
+	// 鍏宠仈鍏崇郴
 	Task *Task `gorm:"foreignKey:TaskID" json:"task,omitempty"`
 	User *User `gorm:"foreignKey:UserID" json:"user,omitempty"`
 }

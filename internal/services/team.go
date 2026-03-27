@@ -1,4 +1,4 @@
-package services
+﻿package services
 
 import (
 	"github.com/gin-gonic/gin"
@@ -15,50 +15,48 @@ func NewTeamService(db *gorm.DB) *TeamService {
 	return &TeamService{db: db}
 }
 
-// CreateTeam 创建团队
+// CreateTeam 鍒涘缓鍥㈤槦
 func (s *TeamService) CreateTeam(userID uint, name, description string) (*models.Team, error) {
-	// TODO: 实现创建团队业务逻辑
+	// TODO: 瀹炵幇鍒涘缓鍥㈤槦涓氬姟閫昏緫
 	return nil, nil
 }
 
-// GetListTeams 获取团队列表逻辑
+// GetListTeams 鑾峰彇鍥㈤槦鍒楄〃閫昏緫
 func (s *TeamService) GetListTeams(c *gin.Context) ([]models.Team, int64, error) {
-	// TODO: 实现获取团队列表逻辑
+	// TODO: 瀹炵幇鑾峰彇鍥㈤槦鍒楄〃閫昏緫
 	return nil, 0, nil
 }
 
-// GetTeams 获取用户参与的团队列表
-func (s *TeamService) GetTeams(userID uint, page, limit int) ([]models.Team, int64, error) {
-	// TODO: 获取用户参与的团队列表
-	return nil, 0, nil
+// GetTeams 鑾峰彇鐢ㄦ埛鍙備笌鐨勫洟闃熷垪琛?func (s *TeamService) GetTeams(userID uint, page, limit int) ([]models.Team, int64, error) {
+	// TODO: 鑾峰彇鐢ㄦ埛鍙備笌鐨勫洟闃熷垪琛?	return nil, 0, nil
 }
 
-// GetTeam 获取团队详情
+// GetTeam 鑾峰彇鍥㈤槦璇︽儏
 func (s *TeamService) GetTeam(teamID uint, userID uint) (*models.Team, error) {
-	// TODO: 实现获取团队详情逻辑
+	// TODO: 瀹炵幇鑾峰彇鍥㈤槦璇︽儏閫昏緫
 	return nil, nil
 }
 
-// UpdateTeam 更新团队信息
+// UpdateTeam 鏇存柊鍥㈤槦淇℃伅
 func (s *TeamService) UpdateTeam(teamID uint, userID uint, updates map[string]interface{}) error {
-	// TODO: 实现更新团队逻辑
+	// TODO: 瀹炵幇鏇存柊鍥㈤槦閫昏緫
 	return nil
 }
 
-// DeleteTeam 删除团队
+// DeleteTeam 鍒犻櫎鍥㈤槦
 func (s *TeamService) DeleteTeam(teamID uint, userID uint) error {
-	// TODO: 实现删除团队逻辑
+	// TODO: 瀹炵幇鍒犻櫎鍥㈤槦閫昏緫
 	return nil
 }
 
-// AddTeamMember 添加团队成员
+// AddTeamMember 娣诲姞鍥㈤槦鎴愬憳
 func (s *TeamService) AddTeamMember(teamID uint, ownerID uint, userID uint, role string) error {
-	// TODO: 实现添加成员逻辑
+	// TODO: 瀹炵幇娣诲姞鎴愬憳閫昏緫
 	return nil
 }
 
-// RemoveTeamMember 移除团队成员
+// RemoveTeamMember 绉婚櫎鍥㈤槦鎴愬憳
 func (s *TeamService) RemoveTeamMember(teamID uint, ownerID uint, userID uint) error {
-	// TODO: 实现移除成员逻辑
+	// TODO: 瀹炵幇绉婚櫎鎴愬憳閫昏緫
 	return nil
 }
