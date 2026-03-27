@@ -1,6 +1,6 @@
-# TaskFlow 后端配置模板
-# 复制此文件为 config.yaml 并修改配置值
-# 敏感信息（密码、密钥）应通过环境变量设置
+﻿# TaskFlow 后端配置
+# 开发环境配置 - 请根据实际环境修改
+# 重要：敏感信息（密码、密钥）应通过环境变量设置，参见 .env.example
 
 app:
   name: "TaskFlow"

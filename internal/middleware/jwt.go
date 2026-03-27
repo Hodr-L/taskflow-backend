@@ -1,4 +1,4 @@
-﻿package middleware
+package middleware
 
 import (
 	"strings"
@@ -12,58 +12,61 @@ import (
 	"go.uber.org/zap"
 )
 
-// JWTAuth JWT璁よ瘉涓棿浠?func JWTAuth(jwtManager *jwt.JWTManager, tokenBlacklist *services.TokenBlacklistService) gin.HandlerFunc {
+// JWTAuth JWT认证中间件
+func JWTAuth(jwtManager *jwt.JWTManager, tokenBlacklist *services.TokenBlacklistService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 浠庤姹傚ご鑾峰彇token
+		// 从请求头获取token
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			handlers.Unauthorized(c, "缂哄皯璁よ瘉浠ょ墝")
+			handlers.Unauthorized(c, "缺少认证令牌")
 			c.Abort()
 			return
 		}
 
-		// 妫€鏌earer token鏍煎紡
+		// 检查Bearer token格式
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			handlers.Unauthorized(c, "浠ょ墝鏍煎紡閿欒")
+			handlers.Unauthorized(c, "令牌格式错误")
 			c.Abort()
 			return
 		}
 
 		tokenString := parts[1]
 
-		// 1. 棣栧厛妫€鏌?token 鏄惁鍦ㄩ粦鍚嶅崟涓?		isBlacklisted, err := tokenBlacklist.IsBlacklisted(c, tokenString)
+		// 1. 首先检查 token 是否在黑名单中
+		isBlacklisted, err := tokenBlacklist.IsBlacklisted(c, tokenString)
 		if err != nil {
-			logger.Error("妫€鏌ラ粦鍚嶅崟澶辫触", zap.Error(err))
-			// Redis 閿欒鏃讹紝鍙互閫夋嫨缁х画楠岃瘉鎴栦笉楠岃瘉
-			handlers.Unauthorized(c, "绯荤粺寮傚父")
+			logger.Error("检查黑名单失败", zap.Error(err))
+			// Redis 错误时，可以选择继续验证或不验证
+			handlers.Unauthorized(c, "系统异常")
 			c.Abort()
 			return
 		}
 
 		if isBlacklisted {
-			logger.Warn("浣跨敤榛戝悕鍗曚腑鐨則oken", zap.String("token", tokenString[:20]+"..."))
-			handlers.Unauthorized(c, "浠ょ墝宸插け鏁?)
+			logger.Warn("使用黑名单中的token", zap.String("token", tokenString[:20]+"..."))
+			handlers.Unauthorized(c, "令牌已失效")
 			c.Abort()
 			return
 		}
 
-		// 楠岃瘉token
+		// 验证token
 		claims, err := jwtManager.VerifyToken(tokenString)
 		if err != nil {
-			logger.Warn("JWT楠岃瘉澶辫触", logger.ErrorField(err), zap.String("path", c.Request.URL.Path))
-			handlers.Unauthorized(c, "鏃犳晥鎴栬繃鏈熺殑浠ょ墝")
+			logger.Warn("JWT验证失败", logger.ErrorField(err), zap.String("path", c.Request.URL.Path))
+			handlers.Unauthorized(c, "无效或过期的令牌")
 			c.Abort()
 			return
 		}
 
-		// 灏嗙敤鎴蜂俊鎭瓨鍌ㄥ埌涓婁笅鏂?		c.Set("user_id", claims.UserID)
+		// 将用户信息存储到上下文
+		c.Set("user_id", claims.UserID)
 		c.Set("username", claims.Username)
 		c.Set("email", claims.Email)
 		c.Set("role", claims.Role)
 		c.Set("token", tokenString)
 
-		logger.Debug("JWT璁よ瘉閫氳繃",
+		logger.Debug("JWT认证通过",
 			zap.Uint("user_id", claims.UserID),
 			zap.String("username", claims.Username),
 			zap.String("path", c.Request.URL.Path),
@@ -73,7 +76,8 @@ import (
 	}
 }
 
-// OptionalJWTAuth 鍙€夌殑JWT璁よ瘉涓棿浠?func OptionalJWTAuth(jwtManager *jwt.JWTManager) gin.HandlerFunc {
+// OptionalJWTAuth 可选的JWT认证中间件
+func OptionalJWTAuth(jwtManager *jwt.JWTManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -91,12 +95,14 @@ import (
 
 		claims, err := jwtManager.VerifyToken(tokenString)
 		if err != nil {
-			// 浠ょ墝鏃犳晥锛屼絾涓嶉樆姝㈣姹?			logger.Debug("鍙€塉WT楠岃瘉澶辫触锛岀户缁鐞?, logger.ErrorField(err))
+			// 令牌无效，但不阻止请求
+			logger.Debug("可选JWT验证失败，继续处理", logger.ErrorField(err))
 			c.Next()
 			return
 		}
 
-		// 灏嗙敤鎴蜂俊鎭瓨鍌ㄥ埌涓婁笅鏂?		c.Set("user_id", claims.UserID)
+		// 将用户信息存储到上下文
+		c.Set("user_id", claims.UserID)
 		c.Set("username", claims.Username)
 		c.Set("email", claims.Email)
 		c.Set("role", claims.Role)
@@ -106,18 +112,19 @@ import (
 	}
 }
 
-// RequireRole 瑕佹眰鐗瑰畾瑙掕壊鐨勪腑闂翠欢
+// RequireRole 要求特定角色的中间件
 func RequireRole(requiredRole string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userRole, exists := c.Get("role")
 		if !exists {
-			handlers.Unauthorized(c, "闇€瑕佽璇?)
+			handlers.Unauthorized(c, "需要认证")
 			c.Abort()
 			return
 		}
 
-		// 瑙掕壊鏉冮檺妫€鏌?		if !hasPermission(userRole.(string), requiredRole) {
-			handlers.Forbidden(c, "鏉冮檺涓嶈冻")
+		// 角色权限检查
+		if !hasPermission(userRole.(string), requiredRole) {
+			handlers.Forbidden(c, "权限不足")
 			c.Abort()
 			return
 		}
@@ -126,17 +133,19 @@ func RequireRole(requiredRole string) gin.HandlerFunc {
 	}
 }
 
-// RequireAdmin 瑕佹眰绠＄悊鍛樿鑹茬殑涓棿浠?func RequireAdmin() gin.HandlerFunc {
+// RequireAdmin 要求管理员角色的中间件
+func RequireAdmin() gin.HandlerFunc {
 	return RequireRole("admin")
 }
 
-// RequireSuperAdmin 瑕佹眰瓒呯骇绠＄悊鍛樿鑹茬殑涓棿浠?func RequireSuperAdmin() gin.HandlerFunc {
+// RequireSuperAdmin 要求超级管理员角色的中间件
+func RequireSuperAdmin() gin.HandlerFunc {
 	return RequireRole("super_admin")
 }
 
-// hasPermission 妫€鏌ョ敤鎴锋槸鍚︽湁鏉冮檺
+// hasPermission 检查用户是否有权限
 func hasPermission(userRole, requiredRole string) bool {
-	// 瑙掕壊鏉冮檺灞傜骇
+	// 角色权限层级
 	roleHierarchy := map[string]int{
 		"user":        1,
 		"admin":       2,
@@ -153,7 +162,7 @@ func hasPermission(userRole, requiredRole string) bool {
 	return userLevel >= requiredLevel
 }
 
-// GetCurrentUserID 浠庝笂涓嬫枃鑾峰彇褰撳墠鐢ㄦ埛ID
+// GetCurrentUserID 从上下文获取当前用户ID
 func GetCurrentUserID(c *gin.Context) (uint, bool) {
 	userID, exists := c.Get("user_id")
 	if !exists {
@@ -162,7 +171,8 @@ func GetCurrentUserID(c *gin.Context) (uint, bool) {
 
 	id, ok := userID.(uint)
 	if !ok {
-		// 灏濊瘯杞崲涓篺loat64锛圝SON鏁板瓧鍙兘琚В鏋愪负float64锛?		if floatID, ok := userID.(float64); ok {
+		// 尝试转换为float64（JSON数字可能被解析为float64）
+		if floatID, ok := userID.(float64); ok {
 			return uint(floatID), true
 		}
 		return 0, false
@@ -171,7 +181,7 @@ func GetCurrentUserID(c *gin.Context) (uint, bool) {
 	return id, true
 }
 
-// GetCurrentUserRole 浠庝笂涓嬫枃鑾峰彇褰撳墠鐢ㄦ埛瑙掕壊
+// GetCurrentUserRole 从上下文获取当前用户角色
 func GetCurrentUserRole(c *gin.Context) (string, bool) {
 	role, exists := c.Get("role")
 	if !exists {
@@ -186,13 +196,14 @@ func GetCurrentUserRole(c *gin.Context) (string, bool) {
 	return roleStr, true
 }
 
-// IsAuthenticated 妫€鏌ョ敤鎴锋槸鍚﹀凡璁よ瘉
+// IsAuthenticated 检查用户是否已认证
 func IsAuthenticated(c *gin.Context) bool {
 	_, exists := c.Get("user_id")
 	return exists
 }
 
-// IsAdmin 妫€鏌ョ敤鎴锋槸鍚︽槸绠＄悊鍛?func IsAdmin(c *gin.Context) bool {
+// IsAdmin 检查用户是否是管理员
+func IsAdmin(c *gin.Context) bool {
 	role, exists := c.Get("role")
 	if !exists {
 		return false
@@ -206,7 +217,8 @@ func IsAuthenticated(c *gin.Context) bool {
 	return roleStr == "admin" || roleStr == "super_admin"
 }
 
-// IsSuperAdmin 妫€鏌ョ敤鎴锋槸鍚︽槸瓒呯骇绠＄悊鍛?func IsSuperAdmin(c *gin.Context) bool {
+// IsSuperAdmin 检查用户是否是超级管理员
+func IsSuperAdmin(c *gin.Context) bool {
 	role, exists := c.Get("role")
 	if !exists {
 		return false

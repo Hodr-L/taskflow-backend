@@ -1,4 +1,4 @@
-﻿package routes
+package routes
 
 import (
 	"github.com/gin-gonic/gin"
@@ -7,19 +7,20 @@ import (
 	"taskflow-backend/pkg/jwt"
 )
 
-// RegisterProjectRoutes 娉ㄥ唽椤圭洰鐩稿叧璺敱
+// RegisterProjectRoutes 注册项目相关路由
 func RegisterProjectRoutes(router *gin.RouterGroup, jwtManager *jwt.JWTManager, projectHandler *handlers.ProjectHandler) {
-	// 椤圭洰璺敱缁?	projects := router.Group("/projects")
+	// 项目路由组
+	projects := router.Group("/projects")
 	projects.Use(middleware.JWTAuth(jwtManager))
 	{
-		// TODO: 瀹炵幇椤圭洰绠＄悊鎺ュ彛
+		// TODO: 实现项目管理接口
 		// projects.GET("", projectHandler.GetProjects)
 		// projects.POST("", projectHandler.CreateProject)
 		// projects.GET("/:id", projectHandler.GetProject)
 		// projects.PUT("/:id", projectHandler.UpdateProject)
 		// projects.DELETE("/:id", projectHandler.DeleteProject)
 
-		// TODO: 娣诲姞椤圭洰浠诲姟绠＄悊璺敱
+		// TODO: 添加项目任务管理路由
 		// projects.GET("/:id/tasks", projectHandler.GetProjectTasks)
 		// projects.GET("/:id/members", projectHandler.GetProjectMembers)
 	}

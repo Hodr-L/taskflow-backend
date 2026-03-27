@@ -1,4 +1,4 @@
-﻿package database
+package database
 
 import (
 	"fmt"
@@ -15,17 +15,18 @@ import (
 
 var db *gorm.DB
 
-// Connect 杩炴帴鍒版暟鎹簱
+// Connect 连接到数据库
 func Connect(cfg config.DatabaseConfig) (*gorm.DB, error) {
 	if db != nil {
 		return db, nil
 	}
 
-	// 浣跨敤绠€鍗曠殑杩炴帴瀛楃涓?	// 浣跨敤MySQL鏍煎紡鐨勮繛鎺ュ瓧绗︿覆
+	// 使用简单的连接字符串
+	// 使用MySQL格式的连接字符串
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=%t&loc=%s",
 		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Name, cfg.Charset, cfg.ParseTime, cfg.Loc)
 
-	// 閰嶇疆Gorm鏃ュ織
+	// 配置Gorm日志
 	gormLogger := logger.New(
 		log.New(log.Writer(), "\r\n", log.LstdFlags),
 		logger.Config{
@@ -36,34 +37,36 @@ func Connect(cfg config.DatabaseConfig) (*gorm.DB, error) {
 		},
 	)
 
-	// 杩炴帴鏁版嵁搴?	var err error
+	// 连接数据库
+	var err error
 	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: gormLogger,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("杩炴帴鏁版嵁搴撳け璐? %w", err)
+		return nil, fmt.Errorf("连接数据库失败: %w", err)
 	}
 
-	// 閰嶇疆杩炴帴姹?	sqlDB, err := db.DB()
+	// 配置连接池
+	sqlDB, err := db.DB()
 	if err != nil {
-		return nil, fmt.Errorf("鑾峰彇鏁版嵁搴撳疄渚嬪け璐? %w", err)
+		return nil, fmt.Errorf("获取数据库实例失败: %w", err)
 	}
 
 	sqlDB.SetMaxOpenConns(cfg.MaxOpenConns)
 	sqlDB.SetMaxIdleConns(cfg.MaxIdleConns)
 	sqlDB.SetConnMaxLifetime(time.Duration(cfg.ConnMaxLifetime) * time.Second)
 
-	// 娴嬭瘯杩炴帴
+	// 测试连接
 	if err := sqlDB.Ping(); err != nil {
-		return nil, fmt.Errorf("鏁版嵁搴撹繛鎺ユ祴璇曞け璐? %w", err)
+		return nil, fmt.Errorf("数据库连接测试失败: %w", err)
 	}
 
 	return db, nil
 }
 
-// AutoMigrate 鑷姩杩佺Щ鏁版嵁搴撹〃锛堜粎鐢ㄤ簬寮€鍙戠幆澧冿級
+// AutoMigrate 自动迁移数据库表（仅用于开发环境）
 func AutoMigrate(db *gorm.DB) error {
-	// 鎸変緷璧栭『搴忚縼绉昏〃
+	// 按依赖顺序迁移表
 	tables := []interface{}{
 		&models.User{},
 		&models.Team{},
@@ -77,21 +80,23 @@ func AutoMigrate(db *gorm.DB) error {
 
 	for _, table := range tables {
 		if err := db.AutoMigrate(table); err != nil {
-			return fmt.Errorf("杩佺Щ琛ㄥけ璐? %w", err)
+			return fmt.Errorf("迁移表失败: %w", err)
 		}
 	}
 
 	return nil
 }
 
-// GetDB 杩斿洖鏁版嵁搴撳疄渚?func GetDB() *gorm.DB {
+// GetDB 返回数据库实例
+func GetDB() *gorm.DB {
 	if db == nil {
-		panic("鏁版嵁搴撴湭杩炴帴锛岃鍏堣皟鐢?Connect()")
+		panic("数据库未连接，请先调用 Connect()")
 	}
 	return db
 }
 
-// Close 鍏抽棴鏁版嵁搴撹繛鎺?func Close() error {
+// Close 关闭数据库连接
+func Close() error {
 	if db == nil {
 		return nil
 	}
@@ -104,12 +109,15 @@ func AutoMigrate(db *gorm.DB) error {
 	return sqlDB.Close()
 }
 
-// Transaction 鎵ц鏁版嵁搴撲簨鍔?func Transaction(fn func(tx *gorm.DB) error) error {
+// Transaction 执行数据库事务
+func Transaction(fn func(tx *gorm.DB) error) error {
 	return db.Transaction(fn)
 }
 
-// CreateTables 鎵嬪姩鍒涘缓琛紙澶囩敤鏂规锛?func CreateTables(db *gorm.DB) error {
-	// 鍒涘缓鐢ㄦ埛琛?	if err := db.Exec(`
+// CreateTables 手动创建表（备用方案）
+func CreateTables(db *gorm.DB) error {
+	// 创建用户表
+	if err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS users (
 			id SERIAL PRIMARY KEY,
 			username VARCHAR(50) UNIQUE NOT NULL,
@@ -124,10 +132,11 @@ func AutoMigrate(db *gorm.DB) error {
 			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 		)
 	`).Error; err != nil {
-		return fmt.Errorf("鍒涘缓users琛ㄥけ璐? %w", err)
+		return fmt.Errorf("创建users表失败: %w", err)
 	}
 
-	// 鍒涘缓鍥㈤槦琛?	if err := db.Exec(`
+	// 创建团队表
+	if err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS teams (
 			id SERIAL PRIMARY KEY,
 			name VARCHAR(100) NOT NULL,
@@ -140,10 +149,11 @@ func AutoMigrate(db *gorm.DB) error {
 			FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
 		)
 	`).Error; err != nil {
-		return fmt.Errorf("鍒涘缓teams琛ㄥけ璐? %w", err)
+		return fmt.Errorf("创建teams表失败: %w", err)
 	}
 
-	// 鍒涘缓鍥㈤槦鎴愬憳琛?	if err := db.Exec(`
+	// 创建团队成员表
+	if err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS team_members (
 			id SERIAL PRIMARY KEY,
 			team_id INTEGER NOT NULL,
@@ -155,10 +165,11 @@ func AutoMigrate(db *gorm.DB) error {
 			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 		)
 	`).Error; err != nil {
-		return fmt.Errorf("鍒涘缓team_members琛ㄥけ璐? %w", err)
+		return fmt.Errorf("创建team_members表失败: %w", err)
 	}
 
-	// 鍒涘缓椤圭洰琛?	if err := db.Exec(`
+	// 创建项目表
+	if err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS projects (
 			id SERIAL PRIMARY KEY,
 			name VARCHAR(100) NOT NULL,
@@ -173,10 +184,11 @@ func AutoMigrate(db *gorm.DB) error {
 			FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL
 		)
 	`).Error; err != nil {
-		return fmt.Errorf("鍒涘缓projects琛ㄥけ璐? %w", err)
+		return fmt.Errorf("创建projects表失败: %w", err)
 	}
 
-	// 鍒涘缓浠诲姟琛?	if err := db.Exec(`
+	// 创建任务表
+	if err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS tasks (
 			id SERIAL PRIMARY KEY,
 			title VARCHAR(200) NOT NULL,
@@ -198,10 +210,10 @@ func AutoMigrate(db *gorm.DB) error {
 			FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE SET NULL
 		)
 	`).Error; err != nil {
-		return fmt.Errorf("鍒涘缓tasks琛ㄥけ璐? %w", err)
+		return fmt.Errorf("创建tasks表失败: %w", err)
 	}
 
-	// 鍒涘缓绱㈠紩
+	// 创建索引
 	indexes := []string{
 		"CREATE INDEX IF NOT EXISTS idx_tasks_project_id ON tasks(project_id)",
 		"CREATE INDEX IF NOT EXISTS idx_tasks_assignee_id ON tasks(assignee_id)",
@@ -213,7 +225,7 @@ func AutoMigrate(db *gorm.DB) error {
 
 	for _, index := range indexes {
 		if err := db.Exec(index).Error; err != nil {
-			return fmt.Errorf("鍒涘缓绱㈠紩澶辫触: %w", err)
+			return fmt.Errorf("创建索引失败: %w", err)
 		}
 	}
 

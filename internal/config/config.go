@@ -1,4 +1,4 @@
-﻿package config
+package config
 
 import (
 	"fmt"
@@ -95,9 +95,10 @@ func Load() (*Config, error) {
 		return cfg, nil
 	}
 
-	// 鍔犺浇.env鏂囦欢锛堝鏋滃瓨鍦級
+	// 加载.env文件（如果存在）
 	if err := gotenv.Load(); err != nil {
-		// .env鏂囦欢涓嶅瓨鍦ㄦ槸姝ｅ父鐨勶紝涓嶈繑鍥為敊璇?		fmt.Println("鈩癸笍  .env鏂囦欢鏈壘鍒帮紝灏嗕娇鐢ㄧ幆澧冨彉閲忓拰榛樿閰嶇疆")
+		// .env文件不存在是正常的，不返回错误
+		fmt.Println("ℹ️  .env文件未找到，将使用环境变量和默认配置")
 	}
 
 	viper.SetConfigName("config")
@@ -107,37 +108,39 @@ func Load() (*Config, error) {
 	viper.AddConfigPath("../config")
 	viper.AddConfigPath("../../config")
 
-	// 璁剧疆榛樿鍊?	setDefaults()
+	// 设置默认值
+	setDefaults()
 
-	// 璇诲彇閰嶇疆鏂囦欢
+	// 读取配置文件
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			fmt.Println("鈿狅笍  閰嶇疆鏂囦欢鏈壘鍒帮紝浣跨敤榛樿鍊?)
+			fmt.Println("⚠️  配置文件未找到，使用默认值")
 		} else {
-			return nil, fmt.Errorf("璇诲彇閰嶇疆鏂囦欢澶辫触: %w", err)
+			return nil, fmt.Errorf("读取配置文件失败: %w", err)
 		}
 	}
 
-	// 鐜鍙橀噺瑕嗙洊
+	// 环境变量覆盖
 	viper.AutomaticEnv()
 	bindEnvVars()
 
-	// 澶勭悊鐜鍙橀噺鍏煎鎬э紙DATABASE_ 鍓嶇紑 -> DB_ 鍓嶇紑锛?	handleEnvCompatibility()
+	// 处理环境变量兼容性（DATABASE_ 前缀 -> DB_ 前缀）
+	handleEnvCompatibility()
 
-	// 瑙ｆ瀽閰嶇疆鍒扮粨鏋勪綋
+	// 解析配置到结构体
 	cfg = &Config{}
 	if err := viper.Unmarshal(cfg); err != nil {
-		return nil, fmt.Errorf("瑙ｆ瀽閰嶇疆澶辫触: %w", err)
+		return nil, fmt.Errorf("解析配置失败: %w", err)
 	}
 
-	// 楠岃瘉閰嶇疆
+	// 验证配置
 	if err := validateConfig(cfg); err != nil {
-		return nil, fmt.Errorf("閰嶇疆楠岃瘉澶辫触: %w", err)
+		return nil, fmt.Errorf("配置验证失败: %w", err)
 	}
 
-	// 鍒涘缓涓婁紶鐩綍
+	// 创建上传目录
 	if err := os.MkdirAll(cfg.Upload.StoragePath, 0755); err != nil {
-		return nil, fmt.Errorf("鍒涘缓涓婁紶鐩綍澶辫触: %w", err)
+		return nil, fmt.Errorf("创建上传目录失败: %w", err)
 	}
 
 	return cfg, nil
@@ -197,20 +200,21 @@ func setDefaults() {
 }
 
 func bindEnvVars() {
-	// 搴旂敤鐜鍙橀噺
+	// 应用环境变量
 	viper.BindEnv("app.name", "APP_NAME")
 	viper.BindEnv("app.version", "APP_VERSION")
 	viper.BindEnv("app.env", "APP_ENV")
 	viper.BindEnv("app.debug", "APP_DEBUG")
 
-	// 鏈嶅姟鍣ㄧ幆澧冨彉閲?	viper.BindEnv("server.port", "SERVER_PORT")
+	// 服务器环境变量
+	viper.BindEnv("server.port", "SERVER_PORT")
 	viper.BindEnv("server.host", "SERVER_HOST")
 	viper.BindEnv("server.read_timeout", "SERVER_READ_TIMEOUT")
 	viper.BindEnv("server.write_timeout", "SERVER_WRITE_TIMEOUT")
 	viper.BindEnv("server.idle_timeout", "SERVER_IDLE_TIMEOUT")
 	viper.BindEnv("server.cors_allowed_origins", "CORS_ALLOWED_ORIGINS")
 
-	// 鏁版嵁搴撶幆澧冨彉閲?- 浣跨敤 DB_ 鍓嶇紑锛堜笌 Docker Compose 涓€鑷达級
+	// 数据库环境变量 - 使用 DB_ 前缀（与 Docker Compose 一致）
 	viper.BindEnv("database.host", "DB_HOST")
 	viper.BindEnv("database.port", "DB_PORT")
 	viper.BindEnv("database.name", "DB_NAME")
@@ -223,7 +227,8 @@ func bindEnvVars() {
 	viper.BindEnv("database.max_idle_conns", "DB_MAX_IDLE_CONNS")
 	viper.BindEnv("database.conn_max_lifetime", "DB_CONN_MAX_LIFETIME")
 
-	// 鏁版嵁搴撳吋瀹规€х幆澧冨彉閲忥紙鏃?DATABASE_ 鍓嶇紑锛?	viper.BindEnv("database.host", "DATABASE_HOST")
+	// 数据库兼容性环境变量（旧 DATABASE_ 前缀）
+	viper.BindEnv("database.host", "DATABASE_HOST")
 	viper.BindEnv("database.port", "DATABASE_PORT")
 	viper.BindEnv("database.name", "DATABASE_NAME")
 	viper.BindEnv("database.user", "DATABASE_USER")
@@ -235,7 +240,7 @@ func bindEnvVars() {
 	viper.BindEnv("database.max_idle_conns", "DATABASE_MAX_IDLE_CONNS")
 	viper.BindEnv("database.conn_max_lifetime", "DATABASE_CONN_MAX_LIFETIME")
 
-	// Redis鐜鍙橀噺
+	// Redis环境变量
 	viper.BindEnv("redis.host", "REDIS_HOST")
 	viper.BindEnv("redis.port", "REDIS_PORT")
 	viper.BindEnv("redis.password", "REDIS_PASSWORD")
@@ -243,30 +248,30 @@ func bindEnvVars() {
 	viper.BindEnv("redis.pool_size", "REDIS_POOL_SIZE")
 	viper.BindEnv("redis.min_idle_conns", "REDIS_MIN_IDLE_CONNS")
 
-	// JWT鐜鍙橀噺
+	// JWT环境变量
 	viper.BindEnv("jwt.secret", "JWT_SECRET")
 	viper.BindEnv("jwt.access_token_expire_hours", "JWT_ACCESS_EXPIRE_HOURS")
 	viper.BindEnv("jwt.refresh_token_expire_days", "JWT_REFRESH_EXPIRE_DAYS")
 
-	// 鏃ュ織鐜鍙橀噺
+	// 日志环境变量
 	viper.BindEnv("log.level", "LOG_LEVEL")
 	viper.BindEnv("log.format", "LOG_FORMAT")
 	viper.BindEnv("log.output", "LOG_OUTPUT")
 
-	// 涓婁紶鐜鍙橀噺
+	// 上传环境变量
 	viper.BindEnv("upload.max_size", "UPLOAD_MAX_SIZE")
 	viper.BindEnv("upload.allowed_types", "UPLOAD_ALLOWED_TYPES")
 	viper.BindEnv("upload.storage_path", "UPLOAD_STORAGE_PATH")
 
-	// Kafka鐜鍙橀噺
+	// Kafka环境变量
 	viper.BindEnv("kafka.enabled", "KAFKA_ENABLED")
 	viper.BindEnv("kafka.brokers", "KAFKA_BROKERS")
 	viper.BindEnv("kafka.client_id", "KAFKA_CLIENT_ID")
 	viper.BindEnv("kafka.notification_group_id", "KAFKA_NOTIFICATION_GROUP_ID")
 	viper.BindEnv("kafka.audit_group_id", "KAFKA_AUDIT_GROUP_ID")
-	// 娉ㄦ剰锛歵opics瀛楁杈冨鏉傦紝閫氬父閫氳繃閰嶇疆鏂囦欢璁剧疆
+	// 注意：topics字段较复杂，通常通过配置文件设置
 
-	// 閭欢閰嶇疆鐜鍙橀噺锛堝彲閫夛級
+	// 邮件配置环境变量（可选）
 	viper.BindEnv("smtp.host", "SMTP_HOST")
 	viper.BindEnv("smtp.port", "SMTP_PORT")
 	viper.BindEnv("smtp.user", "SMTP_USER")
@@ -275,78 +280,86 @@ func bindEnvVars() {
 	viper.BindEnv("smtp.tls", "SMTP_TLS")
 }
 
-// Get 杩斿洖鍏ㄥ眬閰嶇疆瀹炰緥
+// Get 返回全局配置实例
 func Get() *Config {
 	if cfg == nil {
-		panic("閰嶇疆鏈垵濮嬪寲锛岃鍏堣皟鐢?Load()")
+		panic("配置未初始化，请先调用 Load()")
 	}
 	return cfg
 }
 
-// GetDSN 杩斿洖鏁版嵁搴撹繛鎺ュ瓧绗︿覆
+// GetDSN 返回数据库连接字符串
 func (c *DatabaseConfig) GetDSN() string {
 	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=%t&loc=%s",
 		c.User, c.Password, c.Host, c.Port, c.Name, c.Charset, c.ParseTime, c.Loc)
 }
 
-// GetRedisAddr 杩斿洖Redis杩炴帴鍦板潃
+// GetRedisAddr 返回Redis连接地址
 func (c *RedisConfig) GetAddr() string {
 	return fmt.Sprintf("%s:%d", c.Host, c.Port)
 }
 
-// GetUploadPath 杩斿洖瀹屾暣鐨勪笂浼犺矾寰?func (c *UploadConfig) GetUploadPath(filename string) string {
+// GetUploadPath 返回完整的上传路径
+func (c *UploadConfig) GetUploadPath(filename string) string {
 	return filepath.Join(c.StoragePath, filename)
 }
 
-// validateConfig 楠岃瘉閰嶇疆锛岀‘淇濆叧閿厤缃」鏈夋晥
+// validateConfig 验证配置，确保关键配置项有效
 func validateConfig(cfg *Config) error {
-	// 璁剧疆寮€鍙戠幆澧冪殑榛樿 JWT Secret锛堝鏋滄湭璁剧疆锛?	if cfg.JWT.Secret == "" {
+	// 设置开发环境的默认 JWT Secret（如果未设置）
+	if cfg.JWT.Secret == "" {
 		if cfg.App.Env == "production" {
-			return fmt.Errorf("鐢熶骇鐜蹇呴』璁剧疆 JWT_SECRET 鐜鍙橀噺")
+			return fmt.Errorf("生产环境必须设置 JWT_SECRET 环境变量")
 		}
-		// 寮€鍙戠幆澧冧娇鐢ㄤ竴涓粯璁ゅ瘑閽ワ紙浠呯敤浜庡紑鍙戯紝鐢熶骇鐜蹇呴』鏇存崲锛?		cfg.JWT.Secret = "dev-only-insecure-jwt-secret-change-in-production"
-		fmt.Println("鈿狅笍  浣跨敤寮€鍙戠幆澧冮粯璁?JWT Secret锛岀敓浜х幆澧冨繀椤昏缃?JWT_SECRET 鐜鍙橀噺")
+		// 开发环境使用一个默认密钥（仅用于开发，生产环境必须更换）
+		cfg.JWT.Secret = "dev-only-insecure-jwt-secret-change-in-production"
+		fmt.Println("⚠️  使用开发环境默认 JWT Secret，生产环境必须设置 JWT_SECRET 环境变量")
 	}
 
-	// 鐜鐗瑰畾鐨勯厤缃鐞?	if cfg.App.Env == "production" {
-		// 鐢熶骇鐜瀹夊叏妫€鏌?		if cfg.Database.Password == "" || cfg.Database.Password == "taskflow123" {
-			return fmt.Errorf("鐢熶骇鐜鏁版嵁搴撳瘑鐮佷笉鑳戒负绌烘垨浣跨敤榛樿鍊?)
+	// 环境特定的配置处理
+	if cfg.App.Env == "production" {
+		// 生产环境安全检查
+		if cfg.Database.Password == "" || cfg.Database.Password == "taskflow123" {
+			return fmt.Errorf("生产环境数据库密码不能为空或使用默认值")
 		}
 		if cfg.Redis.Password == "" || cfg.Redis.Password == "redis123" {
-			return fmt.Errorf("鐢熶骇鐜Redis瀵嗙爜涓嶈兘涓虹┖鎴栦娇鐢ㄩ粯璁ゅ€?)
+			return fmt.Errorf("生产环境Redis密码不能为空或使用默认值")
 		}
 		if cfg.JWT.Secret == "" || len(cfg.JWT.Secret) < 32 {
-			return fmt.Errorf("鐢熶骇鐜JWT Secret闀垮害鑷冲皯32浣?)
+			return fmt.Errorf("生产环境JWT Secret长度至少32位")
 		}
 	} else {
-		// 寮€鍙?娴嬭瘯鐜锛氬鏋滃瘑鐮佷负绌猴紝璁剧疆榛樿鍊硷紙浠呯敤浜庡紑鍙戯級
+		// 开发/测试环境：如果密码为空，设置默认值（仅用于开发）
 		if cfg.Database.Password == "" {
 			cfg.Database.Password = "taskflow123"
-			fmt.Println("鈩癸笍  浣跨敤寮€鍙戠幆澧冮粯璁ゆ暟鎹簱瀵嗙爜锛岀敓浜х幆澧冨繀椤昏缃?DB_PASSWORD")
+			fmt.Println("ℹ️  使用开发环境默认数据库密码，生产环境必须设置 DB_PASSWORD")
 		}
 		if cfg.Redis.Password == "" {
 			cfg.Redis.Password = "redis123"
-			fmt.Println("鈩癸笍  浣跨敤寮€鍙戠幆澧冮粯璁?Redis 瀵嗙爜锛岀敓浜х幆澧冨繀椤昏缃?REDIS_PASSWORD")
+			fmt.Println("ℹ️  使用开发环境默认 Redis 密码，生产环境必须设置 REDIS_PASSWORD")
 		}
 	}
 
-	// 楠岃瘉绔彛鑼冨洿
+	// 验证端口范围
 	if cfg.Server.Port <= 0 || cfg.Server.Port > 65535 {
-		return fmt.Errorf("鏈嶅姟鍣ㄧ鍙?d鏃犳晥锛屽繀椤诲湪1-65535涔嬮棿", cfg.Server.Port)
+		return fmt.Errorf("服务器端口%d无效，必须在1-65535之间", cfg.Server.Port)
 	}
 
-	// 楠岃瘉鏁版嵁搴撻厤缃?	if cfg.Database.Host == "" {
-		return fmt.Errorf("鏁版嵁搴撲富鏈哄湴鍧€涓嶈兘涓虹┖")
+	// 验证数据库配置
+	if cfg.Database.Host == "" {
+		return fmt.Errorf("数据库主机地址不能为空")
 	}
 	if cfg.Database.Name == "" {
-		return fmt.Errorf("鏁版嵁搴撳悕绉颁笉鑳戒负绌?)
+		return fmt.Errorf("数据库名称不能为空")
 	}
 
 	return nil
 }
 
-// handleEnvCompatibility 澶勭悊鐜鍙橀噺鍏煎鎬?func handleEnvCompatibility() {
-	// 鏁版嵁搴撻厤缃吋瀹规€э細濡傛灉 DB_ 鍓嶇紑鏈缃紝浣?DATABASE_ 鍓嶇紑宸茶缃紝鍒欎娇鐢?DATABASE_ 鐨勫€?	compatMap := map[string]string{
+// handleEnvCompatibility 处理环境变量兼容性
+func handleEnvCompatibility() {
+	// 数据库配置兼容性：如果 DB_ 前缀未设置，但 DATABASE_ 前缀已设置，则使用 DATABASE_ 的值
+	compatMap := map[string]string{
 		"DB_HOST":              "DATABASE_HOST",
 		"DB_PORT":              "DATABASE_PORT",
 		"DB_NAME":              "DATABASE_NAME",
@@ -364,9 +377,12 @@ func validateConfig(cfg *Config) error {
 		newVal := os.Getenv(newKey)
 		oldVal := os.Getenv(oldKey)
 
-		// 濡傛灉鏂伴敭鏈缃絾鏃ч敭宸茶缃紝鍒欒缃埌 viper 涓?		if newVal == "" && oldVal != "" {
-			// 灏嗙幆澧冨彉閲忓悕杞崲涓?viper 鐨勯敭鍚?			viperKey := strings.ToLower(strings.ReplaceAll(newKey, "_", "."))
-			// 鏍规嵁鏁版嵁绫诲瀷杞崲鍊?			switch viperKey {
+		// 如果新键未设置但旧键已设置，则设置到 viper 中
+		if newVal == "" && oldVal != "" {
+			// 将环境变量名转换为 viper 的键名
+			viperKey := strings.ToLower(strings.ReplaceAll(newKey, "_", "."))
+			// 根据数据类型转换值
+			switch viperKey {
 			case "db.port", "db.max.open.conns", "db.max.idle.conns", "db.conn.max.lifetime":
 				if intVal, err := strconv.Atoi(oldVal); err == nil {
 					viper.Set(viperKey, intVal)
@@ -381,7 +397,8 @@ func validateConfig(cfg *Config) error {
 		}
 	}
 
-	// 搴旂敤閰嶇疆鍏煎鎬?	if os.Getenv("APP_ENV") != "" && viper.GetString("app.env") == "" {
+	// 应用配置兼容性
+	if os.Getenv("APP_ENV") != "" && viper.GetString("app.env") == "" {
 		viper.Set("app.env", os.Getenv("APP_ENV"))
 	}
 }

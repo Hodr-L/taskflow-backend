@@ -1,4 +1,4 @@
-﻿package handlers
+package handlers
 
 import (
 	"errors"
@@ -24,10 +24,10 @@ func NewUserHandler(db *gorm.DB) *UserHandler {
 	}
 }
 
-// GetProfile 鑾峰彇褰撳墠鐢ㄦ埛淇℃伅
-// @Summary 鑾峰彇褰撳墠鐢ㄦ埛淇℃伅
-// @Description 鑾峰彇宸茬櫥褰曠敤鎴风殑璇︾粏淇℃伅
-// @Tags 璁よ瘉
+// GetProfile 获取当前用户信息
+// @Summary 获取当前用户信息
+// @Description 获取已登录用户的详细信息
+// @Tags 认证
 // @Security BearerAuth
 // @Produce json
 // @Success 200 {object} Response{data=models.UserResponse}
@@ -37,31 +37,31 @@ func NewUserHandler(db *gorm.DB) *UserHandler {
 func (h *UserHandler) GetProfile(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		Unauthorized(c, "鏈璇?)
+		Unauthorized(c, "未认证")
 		return
 	}
 
 	user, err := h.userService.GetUserByID(userID.(uint))
 	if err != nil {
 		if err == services.ErrUserNotFound {
-			NotFound(c, "鐢ㄦ埛涓嶅瓨鍦?)
+			NotFound(c, "用户不存在")
 		} else {
-			InternalServerError(c, "鑾峰彇鐢ㄦ埛淇℃伅澶辫触", err)
+			InternalServerError(c, "获取用户信息失败", err)
 		}
 		return
 	}
 
-	Success(c, "鑾峰彇鎴愬姛", user.ToResponse())
+	Success(c, "获取成功", user.ToResponse())
 }
 
-// UpdateProfile 鏇存柊鐢ㄦ埛淇℃伅
-// @Summary 鏇存柊鐢ㄦ埛淇℃伅
-// @Description 鏇存柊褰撳墠鐢ㄦ埛鐨勪釜浜轰俊鎭?
-// @Tags 璁よ瘉
+// UpdateProfile 更新用户信息
+// @Summary 更新用户信息
+// @Description 更新当前用户的个人信息
+// @Tags 认证
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param request body models.UpdateProfileRequest true "鏇存柊淇℃伅"
+// @Param request body models.UpdateProfileRequest true "更新信息"
 // @Success 200 {object} Response{data=models.UserResponse}
 // @Failure 400 {object} ErrorResponse
 // @Failure 401 {object} ErrorResponse
@@ -69,13 +69,13 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		Unauthorized(c, "鏈璇?)
+		Unauthorized(c, "未认证")
 		return
 	}
 
 	var req models.UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		BadRequest(c, "鍙傛暟楠岃瘉澶辫触", err)
+		BadRequest(c, "参数验证失败", err)
 		return
 	}
 
@@ -83,26 +83,26 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	if err != nil {
 		switch err {
 		case services.ErrUserNotFound:
-			NotFound(c, "鐢ㄦ埛涓嶅瓨鍦?)
+			NotFound(c, "用户不存在")
 		case services.ErrInvalidInput:
-			BadRequest(c, "鏃犳晥鐨勮緭鍏?)
+			BadRequest(c, "无效的输入")
 		default:
-			InternalServerError(c, "鏇存柊鐢ㄦ埛淇℃伅澶辫触", err)
+			InternalServerError(c, "更新用户信息失败", err)
 		}
 		return
 	}
 
-	Success(c, "鏇存柊鎴愬姛", user.ToResponse())
+	Success(c, "更新成功", user.ToResponse())
 }
 
-// ChangePassword 淇敼瀵嗙爜
-// @Summary 淇敼瀵嗙爜
-// @Description 淇敼褰撳墠鐢ㄦ埛鐨勫瘑鐮?
-// @Tags 璁よ瘉
+// ChangePassword 修改密码
+// @Summary 修改密码
+// @Description 修改当前用户的密码
+// @Tags 认证
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param request body models.UserChangePasswordRequest true "瀵嗙爜淇℃伅"
+// @Param request body models.UserChangePasswordRequest true "密码信息"
 // @Success 200 {object} Response
 // @Failure 400 {object} ErrorResponse
 // @Failure 401 {object} ErrorResponse
@@ -110,13 +110,13 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 func (h *UserHandler) ChangePassword(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		Unauthorized(c, "鏈璇?)
+		Unauthorized(c, "未认证")
 		return
 	}
 
 	var req models.UserChangePasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		BadRequest(c, "鍙傛暟楠岃瘉澶辫触", err)
+		BadRequest(c, "参数验证失败", err)
 		return
 	}
 
@@ -124,33 +124,33 @@ func (h *UserHandler) ChangePassword(c *gin.Context) {
 	if err != nil {
 		switch err {
 		case services.ErrUserNotFound:
-			NotFound(c, "鐢ㄦ埛涓嶅瓨鍦?)
+			NotFound(c, "用户不存在")
 		case services.ErrInvalidCredentials:
-			BadRequest(c, "鍘熷瘑鐮侀敊璇?)
+			BadRequest(c, "原密码错误")
 		case services.ErrInvalidInput:
-			UnprocessableEntity(c, "鏂板瘑鐮佷笉绗﹀悎瑕佹眰", err)
+			UnprocessableEntity(c, "新密码不符合要求", err)
 		default:
-			InternalServerError(c, "淇敼瀵嗙爜澶辫触", err)
+			InternalServerError(c, "修改密码失败", err)
 		}
 		return
 	}
 
-	Success(c, "瀵嗙爜淇敼鎴愬姛", nil)
+	Success(c, "密码修改成功", nil)
 }
 
-// GetTeams 鑾峰彇鐢ㄦ埛鍒楄〃
+// GetTeams 获取用户列表
 func (h *UserHandler) GetListUsers(c *gin.Context) {
 	var req models.GetUsersParams
 	if err := c.ShouldBindQuery(&req); err != nil {
-		logger.Warn("鏌ヨ鍙傛暟楠岃瘉澶辫触", logger.ErrorField(err))
-		BadRequest(c, "鍙傛暟楠岃瘉澶辫触", err)
+		logger.Warn("查询参数验证失败", logger.ErrorField(err))
+		BadRequest(c, "参数验证失败", err)
 		return
 	}
 
 	listUser, total, totalPages, err := h.userService.ListUsers(req)
 
 	if err != nil {
-		InternalServerError(c, "鏌ヨ澶辫触", err)
+		InternalServerError(c, "查询失败", err)
 		return
 	}
 
@@ -165,46 +165,46 @@ func (h *UserHandler) GetListUsers(c *gin.Context) {
 		},
 	}
 
-	Success(c, "鏌ヨ鎴愬姛", response)
+	Success(c, "查询成功", response)
 
 }
 
-// GetUser GetTeam 鑾峰彇鐢ㄦ埛璇︽儏
+// GetUser GetTeam 获取用户详情
 func (h *UserHandler) GetUser(c *gin.Context) {
 	id := c.Param("id")
 
 	userID, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		InternalServerError(c, "鏃犳晥鐨勭敤鎴稩D")
+		InternalServerError(c, "无效的用户ID")
 		return
 	}
 
 	user, err := h.userService.GetUserByID(uint(userID))
 	if err != nil {
 		if errors.Is(err, services.ErrUserNotFound) {
-			NotFound(c, "鐢ㄦ埛涓嶅瓨鍦?)
+			NotFound(c, "用户不存在")
 		} else {
-			InternalServerError(c, "鑾峰彇鐢ㄦ埛淇℃伅澶辫触", err)
+			InternalServerError(c, "获取用户信息失败", err)
 		}
 		return
 	}
 
-	Success(c, "鑾峰彇鎴愬姛", user.ToResponse())
+	Success(c, "获取成功", user.ToResponse())
 }
 
-// UpdateUser UpdateTeam 鏇存柊鐢ㄦ埛
+// UpdateUser UpdateTeam 更新用户
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 
 	id := c.Param("id")
 	userID, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		InternalServerError(c, "鏃犳晥鐨勭敤鎴稩D")
+		InternalServerError(c, "无效的用户ID")
 		return
 	}
 
 	var req models.UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		BadRequest(c, "鍙傛暟楠岃瘉澶辫触", err)
+		BadRequest(c, "参数验证失败", err)
 		return
 	}
 
@@ -212,92 +212,92 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	if err != nil {
 		switch err {
 		case services.ErrUserNotFound:
-			NotFound(c, "鐢ㄦ埛涓嶅瓨鍦?)
+			NotFound(c, "用户不存在")
 		case services.ErrInvalidInput:
-			BadRequest(c, "鏃犳晥鐨勮緭鍏?)
+			BadRequest(c, "无效的输入")
 		default:
-			InternalServerError(c, "鏇存柊鐢ㄦ埛淇℃伅澶辫触", err)
+			InternalServerError(c, "更新用户信息失败", err)
 		}
 		return
 	}
 
-	Success(c, "鏇存柊鎴愬姛", user.ToResponse())
+	Success(c, "更新成功", user.ToResponse())
 }
 
-// DeleteUser DeleteTeam 鍒犻櫎鐢ㄦ埛
+// DeleteUser DeleteTeam 删除用户
 func (h *UserHandler) DeleteUser(c *gin.Context) {
-	// TODO: 瀹炵幇鍒犻櫎鐢ㄦ埛閫昏緫
+	// TODO: 实现删除用户逻辑
 	id := c.Param("id")
 
 	userID, err2 := strconv.ParseUint(id, 10, 64)
 	if err2 != nil {
-		InternalServerError(c, "鏃犳晥鐨勭敤鎴稩D")
+		InternalServerError(c, "无效的用户ID")
 		return
 	}
 
 	err := h.userService.DeleteUserByID(uint(userID))
 	if err != nil {
 		if errors.Is(err, services.ErrUserNotFound) {
-			NotFound(c, "鐢ㄦ埛涓嶅瓨鍦?)
+			NotFound(c, "用户不存在")
 		} else {
-			InternalServerError(c, "鍒犻櫎澶辫触", err)
+			InternalServerError(c, "删除失败", err)
 		}
 		return
 	}
 
-	Success(c, "鍒犻櫎鎴愬姛", nil)
+	Success(c, "删除成功", nil)
 
 }
 
-// ResetPassword 閲嶇疆瀵嗙爜
+// ResetPassword 重置密码
 func (h *UserHandler) ResetPassword(c *gin.Context) {
 	id := c.Param("id")
 
 	userID, err2 := strconv.ParseUint(id, 10, 64)
 	if err2 != nil {
-		InternalServerError(c, "鏃犳晥鐨勭敤鎴稩D")
+		InternalServerError(c, "无效的用户ID")
 		return
 	}
 
 	var req models.ResetPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		BadRequest(c, "鍙傛暟楠岃瘉澶辫触", err)
+		BadRequest(c, "参数验证失败", err)
 		return
 	}
 
 	err := h.userService.ResetPassword(uint(userID), req)
 	if err != nil {
-		InternalServerError(c, "閲嶇疆瀵嗙爜閿欒", err)
+		InternalServerError(c, "重置密码错误", err)
 		return
 	}
 
-	Success(c, "閲嶇疆瀵嗙爜鎴愬姛", nil)
+	Success(c, "重置密码成功", nil)
 
 }
 
-// GetUsersStats 鑾峰彇user 鐘舵€佹暟閲?
+// GetUsersStats 获取user 状态数量
 func (h *UserHandler) GetUsersStats(c *gin.Context) {
 	stats, err := h.userService.GetUserStatus()
 	if err != nil {
-		InternalServerError(c, "status 鏌ヨ澶辫触", err)
+		InternalServerError(c, "status 查询失败", err)
 	}
 
-	Success(c, "status鏌ヨ鎴愬姛", stats)
+	Success(c, "status查询成功", stats)
 }
 
-// CreateUser 鍒涘缓鐢ㄦ埛
+// CreateUser 创建用户
 func (h *UserHandler) CreateUser(c *gin.Context) {
 
 	var req models.CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		BadRequest(c, "鍙傛暟楠岃瘉澶辫触", err)
+		BadRequest(c, "参数验证失败", err)
 		return
 	}
 
 	user, err := h.userService.CreateUser(req)
 	if err != nil {
-		InternalServerError(c, "鍒涘缓鐢ㄦ埛澶辫触", err)
+		InternalServerError(c, "创建用户失败", err)
 		return
 	}
-	Success(c, "鍒涘缓鐢ㄦ埛鎴愬姛", user.ToResponse())
+	Success(c, "创建用户成功", user.ToResponse())
 }

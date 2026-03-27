@@ -1,4 +1,4 @@
-﻿package models
+package models
 
 import (
 	"time"
@@ -18,25 +18,25 @@ type Project struct {
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
-	// 鍏宠仈鍏崇郴
+	// 关联关系
 	Team  *Team `gorm:"foreignKey:TeamID" json:"team,omitempty"`
 	Owner *User `gorm:"foreignKey:OwnerID" json:"owner,omitempty"`
 	// Tasks   []Task `gorm:"foreignKey:ProjectID" json:"tasks,omitempty"`
 }
 
-// TableName 鎸囧畾琛ㄥ悕
+// TableName 指定表名
 func (Project) TableName() string {
 	return "projects"
 }
 
-// BeforeCreate 鍒涘缓鍓嶇殑閽╁瓙
+// BeforeCreate 创建前的钩子
 func (p *Project) BeforeCreate(tx *gorm.DB) error {
 	p.CreatedAt = time.Now()
 	p.UpdatedAt = time.Now()
 	return nil
 }
 
-// BeforeUpdate 鏇存柊鍓嶇殑閽╁瓙
+// BeforeUpdate 更新前的钩子
 func (p *Project) BeforeUpdate(tx *gorm.DB) error {
 	p.UpdatedAt = time.Now()
 	return nil

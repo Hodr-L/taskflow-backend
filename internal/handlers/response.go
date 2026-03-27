@@ -1,4 +1,4 @@
-﻿package handlers
+package handlers
 
 import (
 	"net/http"
@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Response 缁熶竴鍝嶅簲缁撴瀯
+// Response 统一响应结构
 type Response struct {
 	Code    int         `json:"code"`
 	Message string      `json:"message"`
@@ -14,21 +14,22 @@ type Response struct {
 	Meta    interface{} `json:"meta,omitempty"`
 }
 
-// ErrorResponse 閿欒鍝嶅簲缁撴瀯
+// ErrorResponse 错误响应结构
 type ErrorResponse struct {
 	Code    int         `json:"code"`
 	Message string      `json:"message"`
 	Errors  interface{} `json:"errors,omitempty"`
 }
 
-// PaginationMeta 鍒嗛〉鍏冩暟鎹?type PaginationMeta struct {
+// PaginationMeta 分页元数据
+type PaginationMeta struct {
 	Page      int   `json:"page"`
 	Limit     int   `json:"limit"`
 	Total     int64 `json:"total"`
 	TotalPage int   `json:"total_page"`
 }
 
-// Success 鎴愬姛鍝嶅簲
+// Success 成功响应
 func Success(c *gin.Context, message string, data interface{}) {
 	c.JSON(http.StatusOK, Response{
 		Code:    http.StatusOK,
@@ -37,7 +38,7 @@ func Success(c *gin.Context, message string, data interface{}) {
 	})
 }
 
-// Created 鍒涘缓鎴愬姛鍝嶅簲
+// Created 创建成功响应
 func Created(c *gin.Context, message string, data interface{}) {
 	c.JSON(http.StatusCreated, Response{
 		Code:    http.StatusCreated,
@@ -46,7 +47,8 @@ func Created(c *gin.Context, message string, data interface{}) {
 	})
 }
 
-// SuccessWithMeta 甯﹀厓鏁版嵁鐨勬垚鍔熷搷搴?func SuccessWithMeta(c *gin.Context, message string, data interface{}, meta interface{}) {
+// SuccessWithMeta 带元数据的成功响应
+func SuccessWithMeta(c *gin.Context, message string, data interface{}, meta interface{}) {
 	c.JSON(http.StatusOK, Response{
 		Code:    http.StatusOK,
 		Message: message,
@@ -55,7 +57,7 @@ func Created(c *gin.Context, message string, data interface{}) {
 	})
 }
 
-// BadRequest 400閿欒鍝嶅簲
+// BadRequest 400错误响应
 func BadRequest(c *gin.Context, message string, err ...error) {
 	response := ErrorResponse{
 		Code:    http.StatusBadRequest,
@@ -69,7 +71,7 @@ func BadRequest(c *gin.Context, message string, err ...error) {
 	c.JSON(http.StatusBadRequest, response)
 }
 
-// Unauthorized 401閿欒鍝嶅簲
+// Unauthorized 401错误响应
 func Unauthorized(c *gin.Context, message string) {
 	c.JSON(http.StatusUnauthorized, ErrorResponse{
 		Code:    http.StatusUnauthorized,
@@ -77,7 +79,7 @@ func Unauthorized(c *gin.Context, message string) {
 	})
 }
 
-// Forbidden 403閿欒鍝嶅簲
+// Forbidden 403错误响应
 func Forbidden(c *gin.Context, message string) {
 	c.JSON(http.StatusForbidden, ErrorResponse{
 		Code:    http.StatusForbidden,
@@ -85,7 +87,7 @@ func Forbidden(c *gin.Context, message string) {
 	})
 }
 
-// NotFound 404閿欒鍝嶅簲
+// NotFound 404错误响应
 func NotFound(c *gin.Context, message string) {
 	c.JSON(http.StatusNotFound, ErrorResponse{
 		Code:    http.StatusNotFound,
@@ -93,7 +95,7 @@ func NotFound(c *gin.Context, message string) {
 	})
 }
 
-// Conflict 409閿欒鍝嶅簲
+// Conflict 409错误响应
 func Conflict(c *gin.Context, message string) {
 	c.JSON(http.StatusConflict, ErrorResponse{
 		Code:    http.StatusConflict,
@@ -101,7 +103,7 @@ func Conflict(c *gin.Context, message string) {
 	})
 }
 
-// UnprocessableEntity 422閿欒鍝嶅簲
+// UnprocessableEntity 422错误响应
 func UnprocessableEntity(c *gin.Context, message string, errors interface{}) {
 	c.JSON(http.StatusUnprocessableEntity, ErrorResponse{
 		Code:    http.StatusUnprocessableEntity,
@@ -110,7 +112,7 @@ func UnprocessableEntity(c *gin.Context, message string, errors interface{}) {
 	})
 }
 
-// TooManyRequests 429閿欒鍝嶅簲
+// TooManyRequests 429错误响应
 func TooManyRequests(c *gin.Context, message string) {
 	c.JSON(http.StatusTooManyRequests, ErrorResponse{
 		Code:    http.StatusTooManyRequests,
@@ -118,7 +120,7 @@ func TooManyRequests(c *gin.Context, message string) {
 	})
 }
 
-// InternalServerError 500閿欒鍝嶅簲
+// InternalServerError 500错误响应
 func InternalServerError(c *gin.Context, message string, err ...error) {
 	response := ErrorResponse{
 		Code:    http.StatusInternalServerError,
@@ -132,7 +134,7 @@ func InternalServerError(c *gin.Context, message string, err ...error) {
 	c.JSON(http.StatusInternalServerError, response)
 }
 
-// ServiceUnavailable 503閿欒鍝嶅簲
+// ServiceUnavailable 503错误响应
 func ServiceUnavailable(c *gin.Context, message string) {
 	c.JSON(http.StatusServiceUnavailable, ErrorResponse{
 		Code:    http.StatusServiceUnavailable,
@@ -140,22 +142,22 @@ func ServiceUnavailable(c *gin.Context, message string) {
 	})
 }
 
-// ValidationError 鍙傛暟楠岃瘉閿欒
+// ValidationError 参数验证错误
 type ValidationError struct {
 	Field   string `json:"field"`
 	Message string `json:"message"`
 }
 
-// ValidationErrorResponse 鍙傛暟楠岃瘉閿欒鍝嶅簲
+// ValidationErrorResponse 参数验证错误响应
 func ValidationErrorResponse(c *gin.Context, errors []ValidationError) {
 	c.JSON(http.StatusUnprocessableEntity, ErrorResponse{
 		Code:    http.StatusUnprocessableEntity,
-		Message: "鍙傛暟楠岃瘉澶辫触",
+		Message: "参数验证失败",
 		Errors:  errors,
 	})
 }
 
-// PaginatedResponse 鍒嗛〉鍝嶅簲
+// PaginatedResponse 分页响应
 func PaginatedResponse(c *gin.Context, message string, data interface{}, page, limit int, total int64) {
 	totalPage := int(total) / limit
 	if int(total)%limit > 0 {
@@ -172,11 +174,13 @@ func PaginatedResponse(c *gin.Context, message string, data interface{}, page, l
 	SuccessWithMeta(c, message, data, meta)
 }
 
-// NoContent 204鏃犲唴瀹瑰搷搴?func NoContent(c *gin.Context) {
+// NoContent 204无内容响应
+func NoContent(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// Accepted 202宸叉帴鍙楀搷搴?func Accepted(c *gin.Context, message string) {
+// Accepted 202已接受响应
+func Accepted(c *gin.Context, message string) {
 	c.JSON(http.StatusAccepted, Response{
 		Code:    http.StatusAccepted,
 		Message: message,

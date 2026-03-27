@@ -1,4 +1,4 @@
-﻿// database/redis.go
+// database/redis.go
 package database
 
 import (
@@ -17,7 +17,7 @@ var (
 	ctx         = context.Background()
 )
 
-// ConnectRedis 杩炴帴Redis
+// ConnectRedis 连接Redis
 func ConnectRedis(cfg config.RedisConfig) (*redis.Client, error) {
 	if redisClient != nil {
 		return redisClient, nil
@@ -33,39 +33,41 @@ func ConnectRedis(cfg config.RedisConfig) (*redis.Client, error) {
 
 	client := redis.NewClient(options)
 
-	// 娴嬭瘯杩炴帴
+	// 测试连接
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := client.Ping(ctx).Err(); err != nil {
-		return nil, fmt.Errorf("redis杩炴帴澶辫触: %w", err)
+		return nil, fmt.Errorf("redis连接失败: %w", err)
 	}
 
 	redisClient = client
-	logger.Info("鉁?Redis杩炴帴鎴愬姛")
+	logger.Info("✅ Redis连接成功")
 
 	return redisClient, nil
 }
 
-// GetRedis 鑾峰彇Redis瀹㈡埛绔?func GetRedis() *redis.Client {
+// GetRedis 获取Redis客户端
+func GetRedis() *redis.Client {
 	return redisClient
 }
 
-// CloseRedis 鍏抽棴Redis杩炴帴
+// CloseRedis 关闭Redis连接
 func CloseRedis() error {
 	if redisClient != nil {
 		err := redisClient.Close()
 		if err != nil {
-			return fmt.Errorf("鍏抽棴Redis杩炴帴澶辫触: %w", err)
+			return fmt.Errorf("关闭Redis连接失败: %w", err)
 		}
-		logger.Info("鉁?Redis杩炴帴宸插叧闂?)
+		logger.Info("✅ Redis连接已关闭")
 	}
 	return nil
 }
 
-// RedisHealthCheck Redis鍋ュ悍妫€鏌?func RedisHealthCheck() error {
+// RedisHealthCheck Redis健康检查
+func RedisHealthCheck() error {
 	if redisClient == nil {
-		return fmt.Errorf("Redis瀹㈡埛绔湭鍒濆鍖?)
+		return fmt.Errorf("Redis客户端未初始化")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)

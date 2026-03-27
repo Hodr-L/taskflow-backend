@@ -1,4 +1,4 @@
-﻿package models
+package models
 
 import (
 	"time"
@@ -17,7 +17,7 @@ type Team struct {
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
-	// 鍏宠仈鍏崇郴
+	// 关联关系
 	Owner    *User        `gorm:"foreignKey:OwnerID" json:"owner,omitempty"`
 	Members  []TeamMember `gorm:"foreignKey:TeamID" json:"members,omitempty"`
 	Projects []Project    `gorm:"foreignKey:TeamID" json:"projects,omitempty"`
@@ -31,12 +31,12 @@ type TeamMember struct {
 	JoinedAt  time.Time      `json:"joined_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 
-	// 鍏宠仈鍏崇郴
+	// 关联关系
 	Team *Team `gorm:"foreignKey:TeamID" json:"team,omitempty"`
 	User *User `gorm:"foreignKey:UserID" json:"user,omitempty"`
 }
 
-// TableName 鎸囧畾琛ㄥ悕
+// TableName 指定表名
 func (Team) TableName() string {
 	return "teams"
 }
@@ -45,7 +45,7 @@ func (TeamMember) TableName() string {
 	return "team_members"
 }
 
-// BeforeCreate 鍒涘缓鍓嶇殑閽╁瓙
+// BeforeCreate 创建前的钩子
 func (t *Team) BeforeCreate(tx *gorm.DB) error {
 	t.CreatedAt = time.Now()
 	t.UpdatedAt = time.Now()
@@ -57,7 +57,7 @@ func (tm *TeamMember) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// BeforeUpdate 鏇存柊鍓嶇殑閽╁瓙
+// BeforeUpdate 更新前的钩子
 func (t *Team) BeforeUpdate(tx *gorm.DB) error {
 	t.UpdatedAt = time.Now()
 	return nil

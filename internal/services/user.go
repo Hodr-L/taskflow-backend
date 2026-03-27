@@ -1,4 +1,4 @@
-﻿package services
+package services
 
 import (
 	"errors"
@@ -16,7 +16,7 @@ func NewUserService(db *gorm.DB) *UserService {
 	return &UserService{db: db}
 }
 
-// GetUserByID 鏍规嵁ID鑾峰彇鐢ㄦ埛
+// GetUserByID 根据ID获取用户
 func (s *UserService) GetUserByID(id uint) (*models.User, error) {
 	var user models.User
 	if err := s.db.First(&user, id).Error; err != nil {
@@ -28,7 +28,7 @@ func (s *UserService) GetUserByID(id uint) (*models.User, error) {
 	return &user, nil
 }
 
-// ListUsers 鑾峰彇鐢ㄦ埛鍒楄〃锛堝垎椤碉級
+// ListUsers 获取用户列表（分页）
 func (s *UserService) ListUsers(req models.GetUsersParams) ([]models.User, int64, int64, error) {
 	var users []models.User
 	var total int64
@@ -37,30 +37,30 @@ func (s *UserService) ListUsers(req models.GetUsersParams) ([]models.User, int64
 	limit := req.Limit
 
 	query := s.db.Model(&models.User{})
-	// todo 缂哄皯鎸夎鑹叉煡鎵?鎸夌姸鎬佹煡鎵?鎸夐偖绠遍獙璇佺姸鎬佹煡鎵?鎸夊垱寤鸿捣濮嬫椂闂村拰缁撴潫鏃堕棿鏌ユ壘
-	// 1. 鎼滅储鏉′欢锛堢敤鎴峰悕鎴栭偖绠憋級
+	// todo 缺少按角色查找 按状态查找 按邮箱验证状态查找 按创建起始时间和结束时间查找
+	// 1. 搜索条件（用户名或邮箱）
 	if search != "" {
 		query = query.Where("username LIKE ? OR email LIKE ?",
 			"%"+search+"%", "%"+search+"%")
 	}
 
-	// 2. 閭楠岃瘉鐘舵€?
+	// 2. 邮箱验证状态
 	if req.EmailVerified != nil {
 		query = query.Where("email_verified = ?", *req.EmailVerified)
 		fmt.Println(query)
 	}
 
-	// 3. 鐢ㄦ埛瑙掕壊
+	// 3. 用户角色
 	if req.Role != "" {
 		query = query.Where("role = ?", req.Role)
 	}
 
-	// 4. 鐢ㄦ埛鐘舵€?
+	// 4. 用户状态
 	if req.Status != "" {
 		query = query.Where("status = ?", req.Status)
 	}
 
-	// 5. 鍒涘缓鏃堕棿鑼冨洿
+	// 5. 创建时间范围
 	if !req.CreatedAtFrom.IsZero() {
 		query = query.Where("created_at >= ?", req.CreatedAtFrom)
 	}
@@ -68,15 +68,15 @@ func (s *UserService) ListUsers(req models.GetUsersParams) ([]models.User, int64
 		query = query.Where("created_at <= ?", req.CreatedAtTo)
 	}
 
-	// 6. 鎺掑簭
+	// 6. 排序
 	query = query.Order("created_at DESC")
 
-	// 璁＄畻鎬绘暟
+	// 计算总数
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, 0, err
 	}
 
-	// 鍒嗛〉鏌ヨ
+	// 分页查询
 	offset := (page - 1) * limit
 	if err := query.Offset(offset).Limit(limit).Find(&users).Error; err != nil {
 		return nil, 0, 0, err
@@ -95,10 +95,10 @@ func (s *UserService) ToUserListResponse(userList []models.User) []interface{} {
 	return q
 }
 
-// UpdateUserStatus 鏇存柊鐢ㄦ埛鐘舵€?
+// UpdateUserStatus 更新用户状态
 func (s *UserService) UpdateUserStatus(id uint, status string) error {
 	if status != "active" && status != "inactive" && status != "banned" {
-		return errors.New("鏃犳晥鐨勭姸鎬佸€?)
+		return errors.New("无效的状态值")
 	}
 
 	result := s.db.Model(&models.User{}).Where("id = ?", id).Update("status", status)
@@ -112,10 +112,10 @@ func (s *UserService) UpdateUserStatus(id uint, status string) error {
 	return nil
 }
 
-// UpdateUserRole 鏇存柊鐢ㄦ埛瑙掕壊
+// UpdateUserRole 更新用户角色
 func (s *UserService) UpdateUserRole(id uint, role string) error {
 	if role != "user" && role != "admin" && role != "super_admin" {
-		return errors.New("鏃犳晥鐨勮鑹插€?)
+		return errors.New("无效的角色值")
 	}
 
 	result := s.db.Model(&models.User{}).Where("id = ?", id).Update("role", role)
@@ -129,25 +129,25 @@ func (s *UserService) UpdateUserRole(id uint, role string) error {
 	return nil
 }
 
-// UpdateUser 鏇存柊鐢ㄦ埛淇℃伅
+// UpdateUser 更新用户信息
 func (s *UserService) UpdateUser(id uint, req models.UpdateUserRequest) (*models.User, error) {
 	user, err := s.GetUserByID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	// 鏇存柊鐢ㄦ埛鍚嶏紙濡傛灉鎻愪緵锛?
+	// 更新用户名（如果提供）
 	if req.Username != nil {
-		// 妫€鏌ョ敤鎴峰悕鏄惁宸插瓨鍦?
+		// 检查用户名是否已存在
 		var count int64
 		s.db.Model(&models.User{}).Where("username = ? AND id != ?", *req.Username, id).Count(&count)
 		if count > 0 {
-			return nil, errors.New("鐢ㄦ埛鍚嶅凡瀛樺湪")
+			return nil, errors.New("用户名已存在")
 		}
 		user.Username = *req.Username
 	}
 
-	// 鏇存柊澶村儚锛堝鏋滄彁渚涳級
+	// 更新头像（如果提供）
 	if req.AvatarURL != nil {
 		user.AvatarURL = req.AvatarURL
 	}
@@ -177,7 +177,7 @@ func (s *UserService) UpdateUser(id uint, req models.UpdateUserRequest) (*models
 		user.Bio = *req.Bio
 	}
 
-	// 淇濆瓨鏇存柊
+	// 保存更新
 	if err := s.db.Save(user).Error; err != nil {
 		return nil, err
 	}
@@ -185,29 +185,29 @@ func (s *UserService) UpdateUser(id uint, req models.UpdateUserRequest) (*models
 	return user, nil
 }
 
-// ChangePassword 淇敼瀵嗙爜
+// ChangePassword 修改密码
 func (s *UserService) ChangePassword(id uint, oldPassword, newPassword string) error {
 	user, err := s.GetUserByID(id)
 	if err != nil {
 		return err
 	}
 
-	// 楠岃瘉鍘熷瘑鐮?
+	// 验证原密码
 	if !user.CheckPassword(oldPassword) {
 		return ErrInvalidCredentials
 	}
 
-	// 楠岃瘉鏂板瘑鐮?
+	// 验证新密码
 	if len(newPassword) < 6 {
 		return ErrInvalidInput
 	}
 
-	// 璁剧疆鏂板瘑鐮?
+	// 设置新密码
 	if err := user.SetPassword(newPassword); err != nil {
 		return err
 	}
 
-	// 淇濆瓨鍒版暟鎹簱
+	// 保存到数据库
 	if err := s.db.Save(user).Error; err != nil {
 		return err
 	}
@@ -220,7 +220,7 @@ func (s *UserService) DeleteUserByID(id uint) error {
 	if err != nil {
 		return err
 	}
-	// 鍒犻櫎鐢ㄦ埛
+	// 删除用户
 	if err := s.db.Delete(user).Error; err != nil {
 		return err
 	}
@@ -245,7 +245,7 @@ func (s *UserService) ResetPassword(id uint, req models.ResetPasswordRequest) er
 
 func (s *UserService) GetUserStatus() (*models.UserStats, error) {
 	var stats models.UserStats
-	// 鏋勫缓SQL鏌ヨ
+	// 构建SQL查询
 	sql := `
 		SELECT
     COUNT(*) as total,
@@ -269,19 +269,19 @@ WHERE deleted_at IS NULL
 
 func (s *UserService) CreateUser(req models.CreateUserRequest) (*models.User, error) {
 
-	// 楠岃瘉杈撳叆
+	// 验证输入
 	if err := validateUserInput(req.Username, req.Email, req.Password); err != nil {
 		return nil, ErrInvalidInput
 	}
 
-	// 妫€鏌ョ敤鎴锋槸鍚﹀凡瀛樺湪
+	// 检查用户是否已存在
 	var count int64
 	s.db.Model(&models.User{}).Where("username = ? OR email = ?", req.Username, req.Email).Count(&count)
 	if count > 0 {
 		return nil, ErrUserExists
 	}
 
-	// 鍒涘缓鐢ㄦ埛
+	// 创建用户
 	user := &models.User{
 		Username:  req.Username,
 		Email:     req.Email,
@@ -292,18 +292,18 @@ func (s *UserService) CreateUser(req models.CreateUserRequest) (*models.User, er
 		AvatarURL: &req.AvatarURL,
 	}
 
-	// 璁剧疆瀵嗙爜
+	// 设置密码
 	if err := user.SetPassword(req.Password); err != nil {
 		return nil, err
 	}
 
-	// 淇濆瓨鍒版暟鎹簱
+	// 保存到数据库
 	if err := s.db.Create(user).Error; err != nil {
 		return nil, err
 	}
 
 	if req.SendWelcomeEmail == true {
-		// todo 鎺ュ叆kafka 鍙戦€佹杩巈mail
+		// todo 接入kafka 发送欢迎email
 	}
 
 	return user, nil

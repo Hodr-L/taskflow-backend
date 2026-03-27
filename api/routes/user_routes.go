@@ -1,4 +1,4 @@
-﻿package routes
+package routes
 
 import (
 	"taskflow-backend/internal/handlers"
@@ -8,11 +8,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// RegisterUserRoutes 娉ㄥ唽鐢ㄦ埛绠＄悊璺敱锛堢鐞嗗憳鍔熻兘锛?
+// RegisterUserRoutes 注册用户管理路由（管理员功能）
 func RegisterUserRoutes(router *gin.RouterGroup, jwtManager *jwt.JWTManager, tokenBlackHandler *handlers.TokenBlackHandler, userHandler *handlers.UserHandler) {
 	users := router.Group("/users")
 
-	// 鐢ㄦ埛绠＄悊璺敱缁?(涓嶉渶瑕佹潈闄?
+	// 用户管理路由组 (不需要权限)
 	users.Use(middleware.JWTAuth(jwtManager, tokenBlackHandler.TokenBlacklistService))
 	{
 		users.GET("/profile", userHandler.GetProfile)
@@ -21,10 +21,10 @@ func RegisterUserRoutes(router *gin.RouterGroup, jwtManager *jwt.JWTManager, tok
 	}
 
 	admin := users.Group("/admin")
-	// 鐢ㄦ埛绠＄悊璺敱缁勶紙闇€瑕佺鐞嗗憳鏉冮檺锛?
+	// 用户管理路由组（需要管理员权限）
 	admin.Use(middleware.JWTAuth(jwtManager, tokenBlackHandler.TokenBlacklistService), middleware.RequireAdmin())
 	{
-		// TODO: 瀹炵幇鐢ㄦ埛绠＄悊鎺ュ彛
+		// TODO: 实现用户管理接口
 		admin.GET("", userHandler.GetListUsers)
 		admin.POST("", userHandler.CreateUser)
 		admin.GET("/:id", userHandler.GetUser)

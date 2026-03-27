@@ -1,4 +1,4 @@
-﻿package models
+package models
 
 import (
 	"time"
@@ -23,7 +23,7 @@ type User struct {
 	UpdatedAt     time.Time      `json:"updated_at"`
 	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
 
-	// 鍏宠仈鍏崇郴锛堟殏鏃舵敞閲婏紝绛夋ā鍨嬪垱寤哄悗鍐嶅惎鐢級
+	// 关联关系（暂时注释，等模型创建后再启用）
 	// Teams        []TeamMember `gorm:"foreignKey:UserID" json:"teams,omitempty"`
 	// OwnedTeams   []Team       `gorm:"foreignKey:OwnerID" json:"owned_teams,omitempty"`
 	// OwnedProjects []Project    `gorm:"foreignKey:OwnerID" json:"owned_projects,omitempty"`
@@ -34,25 +34,25 @@ type User struct {
 	// Notifications []Notification `gorm:"foreignKey:UserID" json:"notifications,omitempty"`
 }
 
-// TableName 鎸囧畾琛ㄥ悕
+// TableName 指定表名
 func (User) TableName() string {
 	return "users"
 }
 
-// BeforeCreate 鍒涘缓鍓嶇殑閽╁瓙
+// BeforeCreate 创建前的钩子
 func (u *User) BeforeCreate(tx *gorm.DB) error {
 	u.CreatedAt = time.Now()
 	u.UpdatedAt = time.Now()
 	return nil
 }
 
-// BeforeUpdate 鏇存柊鍓嶇殑閽╁瓙
+// BeforeUpdate 更新前的钩子
 func (u *User) BeforeUpdate(tx *gorm.DB) error {
 	u.UpdatedAt = time.Now()
 	return nil
 }
 
-// SetPassword 璁剧疆瀵嗙爜锛堝姞瀵嗗瓨鍌級
+// SetPassword 设置密码（加密存储）
 func (u *User) SetPassword(password string) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -62,29 +62,29 @@ func (u *User) SetPassword(password string) error {
 	return nil
 }
 
-// CheckPassword 楠岃瘉瀵嗙爜
+// CheckPassword 验证密码
 func (u *User) CheckPassword(password string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password))
 	return err == nil
 }
 
-// IsAdmin 妫€鏌ユ槸鍚︽槸绠＄悊鍛?
+// IsAdmin 检查是否是管理员
 func (u *User) IsAdmin() bool {
 	return u.Role == "admin" || u.Role == "super_admin"
 }
 
-// IsActive 妫€鏌ユ槸鍚︽椿璺?
+// IsActive 检查是否活跃
 func (u *User) IsActive() bool {
 	return u.Status == "active"
 }
 
-// UpdateLastLogin 鏇存柊鏈€鍚庣櫥褰曟椂闂?
+// UpdateLastLogin 更新最后登录时间
 func (u *User) UpdateLastLogin() {
 	now := time.Now()
 	u.LastLoginAt = &now
 }
 
-// ToResponse 杞崲涓篈PI鍝嶅簲鏍煎紡
+// ToResponse 转换为API响应格式
 func (u *User) ToResponse() map[string]interface{} {
 	return map[string]interface{}{
 		"id":             u.ID,
@@ -102,26 +102,26 @@ func (u *User) ToResponse() map[string]interface{} {
 	}
 }
 
-// UserCreateRequest 鍒涘缓鐢ㄦ埛璇锋眰
+// UserCreateRequest 创建用户请求
 type UserCreateRequest struct {
 	Username string `json:"username" binding:"required,min=3,max=50"`
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=6,max=100"`
 }
 
-// UserLoginRequest 鐢ㄦ埛鐧诲綍璇锋眰
+// UserLoginRequest 用户登录请求
 type UserLoginRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=6"`
 }
 
-// UpdateProfileRequest 鐢ㄦ埛鏇存柊鑷繁璇锋眰
+// UpdateProfileRequest 用户更新自己请求
 type UpdateProfileRequest struct {
 	Username  *string `json:"username,omitempty" binding:"omitempty,min=3,max=50"`
 	AvatarURL *string `json:"avatar_url,omitempty" binding:"omitempty,url"`
 }
 
-// UpdateProfileRequest 鏇存柊鐢ㄦ埛璇锋眰
+// UpdateProfileRequest 更新用户请求
 type UpdateUserRequest struct {
 	UpdateProfileRequest
 	Email          *string `json:"email,omitempty" binding:"omitempty,email"`
@@ -132,13 +132,13 @@ type UpdateUserRequest struct {
 	Bio            *string `json:"bio,omitempty" binding:"omitempty,min=3,max=100"`
 }
 
-// UserChangePasswordRequest 淇敼瀵嗙爜璇锋眰
+// UserChangePasswordRequest 修改密码请求
 type UserChangePasswordRequest struct {
 	OldPassword string `json:"old_password" binding:"required,min=6"`
 	NewPassword string `json:"new_password" binding:"required,min=6,max=100"`
 }
 
-// GetUsersParams 鑾峰彇鐢ㄦ埛鍒楄〃鏌ヨ鍙傛暟
+// GetUsersParams 获取用户列表查询参数
 type GetUsersParams struct {
 	Page          int       `form:"page,default=1" binding:"min=1"`
 	Limit         int       `form:"limit,default=20" binding:"min=1,max=100"`
@@ -150,7 +150,7 @@ type GetUsersParams struct {
 	CreatedAtTo   time.Time `form:"created_at_to" binding:"omitempty" time_format:"2006-01-02T15:04:05Z"`
 }
 
-// Pagination 鍒嗛〉淇℃伅缁撴瀯浣?
+// Pagination 分页信息结构体
 type Pagination struct {
 	Page       int   `json:"page"`
 	Limit      int   `json:"limit"`
@@ -158,7 +158,7 @@ type Pagination struct {
 	TotalPages int64 `json:"total_pages"`
 }
 
-// UserListResponse 鐢ㄦ埛鍒楄〃鍝嶅簲缁撴瀯浣擄紙浣跨敤 data 瀛楁锛?
+// UserListResponse 用户列表响应结构体（使用 data 字段）
 type UserListResponse struct {
 	User       interface{} `json:"user"`
 	Pagination Pagination  `json:"Pagination"`
@@ -179,24 +179,24 @@ type UserStats struct {
 	Unverified int64 `json:"unverified"`
 }
 
-// CreateUserRequest 鍒涘缓鐢ㄦ埛璇锋眰缁撴瀯浣?
+// CreateUserRequest 创建用户请求结构体
 type CreateUserRequest struct {
-	// 蹇呭～瀛楁
+	// 必填字段
 	Username string `json:"username" binding:"required,min=3,max=50" validate:"required,min=3,max=50"`
 	Email    string `json:"email" binding:"required,email" validate:"required,email" example:"john@example.com"`
 	Password string `json:"password" binding:"required,min=6,max=100" validate:"required,min=6,max=100"`
 
-	// 鍙€夊瓧娈?
+	// 可选字段
 	Fullname string `json:"fullname,omitempty" binding:"omitempty,min=1,max=100" validate:"omitempty,min=1,max=100"`
 	Bio      string `json:"bio,omitempty" binding:"omitempty,max=500" validate:"omitempty,max=500"`
 
-	// 鏋氫妇瀛楁
+	// 枚举字段
 	Role   string `json:"role,omitempty" binding:"omitempty,oneof=user admin super_admin" validate:"omitempty,oneof=user admin super_admin"`
 	Status string `json:"status,omitempty" binding:"omitempty,oneof=active inactive banned" validate:"omitempty,oneof=active inactive banned"`
 
-	// URL瀛楁
+	// URL字段
 	AvatarURL string `json:"avatar_url,omitempty" binding:"omitempty,url" validate:"omitempty,url" `
 
-	// 甯冨皵瀛楁
+	// 布尔字段
 	SendWelcomeEmail bool `json:"send_welcome_email,omitempty" binding:"omitempty"`
 }

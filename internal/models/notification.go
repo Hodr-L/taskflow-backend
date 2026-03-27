@@ -1,4 +1,4 @@
-﻿package models
+package models
 
 import (
 	"time"
@@ -17,7 +17,7 @@ type Notification struct {
 	ReadAt    *time.Time     `json:"read_at,omitempty"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 
-	// 鍏宠仈鍏崇郴
+	// 关联关系
 	User *User `gorm:"foreignKey:UserID" json:"user,omitempty"`
 }
 

@@ -1,93 +1,93 @@
-﻿# TaskFlow 鍚庣鏈嶅姟
+# TaskFlow 后端服务
 
-## 馃搵 姒傝堪
-TaskFlow 鐨勫悗绔?API 鏈嶅姟锛屼娇鐢?Go 璇█寮€鍙戯紝鍩轰簬 Gin 妗嗘灦锛屾彁渚涗换鍔＄鐞嗐€佸洟闃熷崗浣溿€佺敤鎴疯璇佺瓑鍔熻兘銆?
+## 📋 概述
+TaskFlow 的后端 API 服务，使用 Go 语言开发，基于 Gin 框架，提供任务管理、团队协作、用户认证等功能。
 
-## 馃殌 蹇€熷紑濮?
+## 🚀 快速开始
 
-### 鐜瑕佹眰
+### 环境要求
 - Go 1.21+
 - MySQL 8.0+
 - Redis 7+
-- (鍙€? Kafka 2.8+
+- (可选) Kafka 2.8+
 
-### 1. 鍏嬮殕椤圭洰
+### 1. 克隆项目
 ```bash
 git clone <repository-url>
 cd taskflow/backend
 ```
 
-### 2. 閰嶇疆鐜
+### 2. 配置环境
 ```bash
-# 澶嶅埗閰嶇疆鏂囦欢妯℃澘
+# 复制配置文件模板
 cp config.example.yaml config.yaml
 cp .env.example .env
 
-# 缂栬緫 .env 鏂囦欢锛岃缃綘鐨勫瘑鐮佸拰瀵嗛挜
-# 閲嶈锛氱敓浜х幆澧冨繀椤讳慨鏀归粯璁ゅ瘑鐮佸拰瀵嗛挜锛?
+# 编辑 .env 文件，设置你的密码和密钥
+# 重要：生产环境必须修改默认密码和密钥！
 ```
 
-### 3. 瀹夎渚濊禆
+### 3. 安装依赖
 ```bash
 go mod download
 ```
 
-### 4. 鍚姩鍩虹璁炬柦
+### 4. 启动基础设施
 ```bash
-# 浣跨敤 Docker Compose 鍚姩鏁版嵁搴撳拰缂撳瓨
+# 使用 Docker Compose 启动数据库和缓存
 cd ../deployments
 docker-compose up -d mysql redis
 ```
 
-### 5. 杩愯鏈嶅姟
+### 5. 运行服务
 ```bash
-# 杩斿洖鍚庣鐩綍
+# 返回后端目录
 cd ../backend
 
-# 寮€鍙戞ā寮忥紙鐑噸杞斤級
+# 开发模式（热重载）
 air
 
-# 鎴栫洿鎺ヨ繍琛?
+# 或直接运行
 go run cmd/main.go
 ```
 
-### 6. 楠岃瘉鏈嶅姟
+### 6. 验证服务
 ```bash
-# 鍋ュ悍妫€鏌?
+# 健康检查
 curl http://localhost:30088/api/v1/health
 
-# 鎴栬闂?Swagger UI锛堝鏋滃凡鍚敤锛?
+# 或访问 Swagger UI（如果已启用）
 # http://localhost:30088/swagger/index.html
 ```
 
-## 鈿欙笍 閰嶇疆绠＄悊
+## ⚙️ 配置管理
 
-### 閰嶇疆鏂囦欢缁撴瀯
+### 配置文件结构
 ```
 backend/
-鈹溾攢鈹€ config.example.yaml      # 閰嶇疆妯℃澘锛堟彁浜ゅ埌浠撳簱锛?
-鈹溾攢鈹€ .env.example            # 鐜鍙橀噺妯℃澘锛堟彁浜ゅ埌浠撳簱锛?
-鈹溾攢鈹€ config.yaml             # 鏈湴閰嶇疆鏂囦欢锛?gitignore蹇界暐锛?
-鈹溾攢鈹€ .env                    # 鏈湴鐜鍙橀噺锛?gitignore蹇界暐锛?
-鈹斺攢鈹€ internal/config/config.go # 閰嶇疆鍔犺浇閫昏緫
+├── config.example.yaml      # 配置模板（提交到仓库）
+├── .env.example            # 环境变量模板（提交到仓库）
+├── config.yaml             # 本地配置文件（.gitignore忽略）
+├── .env                    # 本地环境变量（.gitignore忽略）
+└── internal/config/config.go # 配置加载逻辑
 ```
 
-### 閰嶇疆浼樺厛绾?
-1. **鐜鍙橀噺**锛堟渶楂樹紭鍏堢骇锛?
-2. **`.env` 鏂囦欢**锛堝紑鍙戠幆澧冩柟渚夸娇鐢級
-3. **`config.yaml` 鏂囦欢**
-4. **浠ｇ爜榛樿鍊?*锛堟渶浣庝紭鍏堢骇锛?
+### 配置优先级
+1. **环境变量**（最高优先级）
+2. **`.env` 文件**（开发环境方便使用）
+3. **`config.yaml` 文件**
+4. **代码默认值**（最低优先级）
 
-### 鐜鍙橀噺鍛藉悕
-- **鏁版嵁搴?*: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
+### 环境变量命名
+- **数据库**: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
 - **Redis**: `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`
 - **JWT**: `JWT_SECRET`, `JWT_ACCESS_EXPIRE_HOURS`
-- **鏈嶅姟鍣?*: `SERVER_PORT`, `SERVER_HOST`, `CORS_ALLOWED_ORIGINS`
-- **搴旂敤**: `APP_ENV`, `APP_NAME`, `DEBUG`
+- **服务器**: `SERVER_PORT`, `SERVER_HOST`, `CORS_ALLOWED_ORIGINS`
+- **应用**: `APP_ENV`, `APP_NAME`, `DEBUG`
 
-### 寮€鍙戠幆澧冮厤缃ず渚?
+### 开发环境配置示例
 ```bash
-# .env 鏂囦欢鍐呭绀轰緥
+# .env 文件内容示例
 APP_ENV=development
 DB_HOST=localhost
 DB_PORT=53306
@@ -100,32 +100,32 @@ REDIS_PASSWORD=redis123
 JWT_SECRET=your-dev-jwt-secret-change-in-production
 ```
 
-### 鐢熶骇鐜閰嶇疆瑕佹眰
-1. **蹇呴』璁剧疆寮哄瘑鐮?*锛氭暟鎹簱鍜?Redis 瀵嗙爜闀垮害鑷冲皯 12 浣?
-2. **蹇呴』璁剧疆寮?JWT Secret**锛氶暱搴﹁嚦灏?32 浣嶏紝浣跨敤闅忔満瀛楃涓?
-3. **绂佺敤璋冭瘯妯″紡**锛氳缃?`DEBUG=false`
-4. **璁剧疆姝ｇ‘鐨勭幆澧?*锛氳缃?`APP_ENV=production`
+### 生产环境配置要求
+1. **必须设置强密码**：数据库和 Redis 密码长度至少 12 位
+2. **必须设置强 JWT Secret**：长度至少 32 位，使用随机字符串
+3. **禁用调试模式**：设置 `DEBUG=false`
+4. **设置正确的环境**：设置 `APP_ENV=production`
 
-## 馃惓 Docker 閮ㄧ讲
+## 🐳 Docker 部署
 
-### 鏋勫缓闀滃儚
+### 构建镜像
 ```bash
 docker build -t taskflow-backend:latest .
 ```
 
-### 浣跨敤 Docker Compose
+### 使用 Docker Compose
 ```bash
-# 瀹屾暣鍫嗘爤锛堝悗绔?+ 鏁版嵁搴?+ Redis + Kafka锛?
+# 完整堆栈（后端 + 数据库 + Redis + Kafka）
 cd ../deployments
 docker-compose up -d
 
-# 鎴栦粎鍚姩蹇呴渶鏈嶅姟
+# 或仅启动必需服务
 docker-compose up -d mysql redis backend
 ```
 
-### 鐜鍙橀噺娉ㄥ叆
+### 环境变量注入
 ```bash
-# 杩愯瀹瑰櫒鏃舵敞鍏ョ幆澧冨彉閲?
+# 运行容器时注入环境变量
 docker run -d \
   -p 30088:30088 \
   -e DB_PASSWORD=your_secure_password \
@@ -134,117 +134,117 @@ docker run -d \
   taskflow-backend:latest
 ```
 
-## 馃敡 寮€鍙戞寚鍗?
+## 🔧 开发指南
 
-### 鏁版嵁搴撹縼绉?
+### 数据库迁移
 ```bash
-# 鑷姩杩佺Щ锛堜粎寮€鍙戠幆澧冿級
+# 自动迁移（仅开发环境）
 go run scripts/migrate/main.go up
 
-# 鎴栦娇鐢?GORM 鑷姩杩佺Щ
+# 或使用 GORM 自动迁移
 go run cmd/migrate/main.go
 ```
 
-### API 娴嬭瘯
+### API 测试
 ```bash
-# 浣跨敤 curl 娴嬭瘯 API
+# 使用 curl 测试 API
 curl -X POST http://localhost:30088/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"admin123"}'
 
-# 鎴栦娇鐢?Postman 瀵煎叆 API 鏂囨。
+# 或使用 Postman 导入 API 文档
 ```
 
-### 鏃ュ織鏌ョ湅
+### 日志查看
 ```bash
-# 鏌ョ湅搴旂敤鏃ュ織
+# 查看应用日志
 tail -f logs/app.log
 
-# 鎴栨牴鎹厤缃緭鍑哄埌 stdout
+# 或根据配置输出到 stdout
 ```
 
-## 馃攼 瀹夊叏閰嶇疆
+## 🔐 安全配置
 
-### 鐢熶骇鐜瀹夊叏妫€鏌?
-- [ ] 楠岃瘉 `JWT_SECRET` 宸茶缃笖闀垮害 鈮?32 浣?
-- [ ] 楠岃瘉鏁版嵁搴撳瘑鐮佷笉鏄粯璁ゅ€?
-- [ ] 楠岃瘉 Redis 瀵嗙爜涓嶆槸榛樿鍊?
-- [ ] 纭 `DEBUG=false`
-- [ ] 纭 CORS 閰嶇疆浠呭厑璁镐俊浠荤殑鍩熷悕
-- [ ] 鍚敤 HTTPS锛堥€氳繃鍙嶅悜浠ｇ悊锛?
+### 生产环境安全检查
+- [ ] 验证 `JWT_SECRET` 已设置且长度 ≥ 32 位
+- [ ] 验证数据库密码不是默认值
+- [ ] 验证 Redis 密码不是默认值
+- [ ] 确认 `DEBUG=false`
+- [ ] 确认 CORS 配置仅允许信任的域名
+- [ ] 启用 HTTPS（通过反向代理）
 
-### 瀵嗛挜绠＄悊寤鸿
-1. **浣跨敤瀵嗛挜绠＄悊鏈嶅姟**锛氬 HashiCorp Vault銆丄WS Secrets Manager
-2. **瀹氭湡杞崲瀵嗛挜**锛氭瘡 3-6 涓湀杞崲涓€娆?JWT Secret
-3. **鏈€灏忔潈闄愬師鍒?*锛氭暟鎹簱鐢ㄦ埛浠呮巿浜堝繀瑕佹潈闄?
-4. **瀹¤鏃ュ織**锛氬惎鐢ㄦ墍鏈夋晱鎰熸搷浣滅殑瀹¤鏃ュ織
+### 密钥管理建议
+1. **使用密钥管理服务**：如 HashiCorp Vault、AWS Secrets Manager
+2. **定期轮换密钥**：每 3-6 个月轮换一次 JWT Secret
+3. **最小权限原则**：数据库用户仅授予必要权限
+4. **审计日志**：启用所有敏感操作的审计日志
 
-## 馃搳 鐩戞帶涓庡仴搴锋鏌?
+## 📊 监控与健康检查
 
-### 鍋ュ悍妫€鏌ョ鐐?
-- `GET /api/v1/health` - 搴旂敤鍋ュ悍鐘舵€?
-- `GET /api/v1/health/db` - 鏁版嵁搴撹繛鎺ョ姸鎬?
-- `GET /api/v1/health/redis` - Redis 杩炴帴鐘舵€?
-- `GET /api/v1/health/kafka` - Kafka 杩炴帴鐘舵€侊紙濡傛灉鍚敤锛?
+### 健康检查端点
+- `GET /api/v1/health` - 应用健康状态
+- `GET /api/v1/health/db` - 数据库连接状态
+- `GET /api/v1/health/redis` - Redis 连接状态
+- `GET /api/v1/health/kafka` - Kafka 连接状态（如果启用）
 
-### 鐩戞帶鎸囨爣
-- **Prometheus**锛氬鏋滃惎鐢紝鎸囨爣浣嶄簬 `/metrics`
-- **鑷畾涔夋寚鏍?*锛氳姹傝鏁般€佸搷搴旀椂闂淬€侀敊璇巼绛?
+### 监控指标
+- **Prometheus**：如果启用，指标位于 `/metrics`
+- **自定义指标**：请求计数、响应时间、错误率等
 
-## 馃毃 鏁呴殰鎺掗櫎
+## 🚨 故障排除
 
-### 甯歌闂
+### 常见问题
 
-#### 1. 鏁版嵁搴撹繛鎺ュけ璐?
+#### 1. 数据库连接失败
 ```bash
-# 妫€鏌?MySQL 鏈嶅姟鐘舵€?
+# 检查 MySQL 服务状态
 docker ps | grep mysql
 
-# 妫€鏌ョ鍙ｆ槸鍚﹁鍗犵敤
+# 检查端口是否被占用
 netstat -an | grep 53306
 
-# 楠岃瘉鏁版嵁搴撻厤缃?
+# 验证数据库配置
 echo "DB_HOST=$DB_HOST, DB_PORT=$DB_PORT"
 ```
 
-#### 2. Redis 杩炴帴澶辫触
+#### 2. Redis 连接失败
 ```bash
-# 妫€鏌?Redis 鏈嶅姟鐘舵€?
+# 检查 Redis 服务状态
 docker ps | grep redis
 
-# 娴嬭瘯 Redis 杩炴帴
+# 测试 Redis 连接
 redis-cli -h localhost -p 6379 -a your_password ping
 ```
 
-#### 3. JWT 楠岃瘉澶辫触
-- 妫€鏌?`JWT_SECRET` 鐜鍙橀噺鏄惁璁剧疆
-- 楠岃瘉浠ょ墝杩囨湡鏃堕棿閰嶇疆
-- 纭绯荤粺鏃堕棿鍚屾
+#### 3. JWT 验证失败
+- 检查 `JWT_SECRET` 环境变量是否设置
+- 验证令牌过期时间配置
+- 确认系统时间同步
 
-#### 4. 閰嶇疆鏂囦欢鍔犺浇闂
+#### 4. 配置文件加载问题
 ```bash
-# 鍚敤璇︾粏鏃ュ織鏌ョ湅閰嶇疆鍔犺浇杩囩▼
+# 启用详细日志查看配置加载过程
 DEBUG_CONFIG=true go run cmd/main.go
 ```
 
-## 馃 璐＄尞鎸囧崡
+## 🤝 贡献指南
 
-1. Fork 椤圭洰浠撳簱
-2. 鍒涘缓鍔熻兘鍒嗘敮 (`git checkout -b feature/amazing-feature`)
-3. 鎻愪氦鏇存敼 (`git commit -m 'Add amazing feature'`)
-4. 鎺ㄩ€佸埌鍒嗘敮 (`git push origin feature/amazing-feature`)
-5. 鍒涘缓 Pull Request
+1. Fork 项目仓库
+2. 创建功能分支 (`git checkout -b feature/amazing-feature`)
+3. 提交更改 (`git commit -m 'Add amazing feature'`)
+4. 推送到分支 (`git push origin feature/amazing-feature`)
+5. 创建 Pull Request
 
-## 馃搫 璁稿彲璇?
+## 📄 许可证
 
-鏈」鐩噰鐢?MIT 璁稿彲璇?- 鏌ョ湅 [LICENSE](LICENSE) 鏂囦欢浜嗚В璇︽儏銆?
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
 
-## 馃摓 鏀寔
+## 📞 支持
 
-- 闂鎶ュ憡锛歔GitHub Issues](https://github.com/your-org/taskflow/issues)
-- 鏂囨。锛歔椤圭洰 Wiki](https://github.com/your-org/taskflow/wiki)
-- 璁ㄨ锛歔GitHub Discussions](https://github.com/your-org/taskflow/discussions)
+- 问题报告：[GitHub Issues](https://github.com/your-org/taskflow/issues)
+- 文档：[项目 Wiki](https://github.com/your-org/taskflow/wiki)
+- 讨论：[GitHub Discussions](https://github.com/your-org/taskflow/discussions)
 
 ---
 
-**鎻愮ず**锛氬缁堝湪鐢熶骇鐜鍓嶅湪娴嬭瘯鐜楠岃瘉閰嶇疆鏇存敼锛
+**提示**：始终在生产环境前在测试环境验证配置更改！
