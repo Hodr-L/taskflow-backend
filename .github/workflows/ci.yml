@@ -9,16 +9,6 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  
-  # 配置环境变量（从 GitHub Secrets 获取）
-  # 在仓库设置中添加以下 secrets：
-  # - DB_PASSWORD: 测试数据库密码
-  # - REDIS_PASSWORD: 测试Redis密码  
-  # - JWT_SECRET: 测试JWT密钥
-  # 如果没有设置secrets，集成测试将跳过
-  DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-  REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
-  JWT_SECRET: ${{ secrets.JWT_SECRET }}
   APP_ENV: test
 
 jobs:
@@ -124,7 +114,7 @@ jobs:
   integration-test:
     runs-on: ubuntu-latest
     needs: build
-    if: ${{ secrets.DB_PASSWORD != '' && secrets.JWT_SECRET != '' }}  # 仅在secrets设置时运行
+    if: secrets.DB_PASSWORD && secrets.JWT_SECRET  # 仅在secrets设置时运行
     env:
       DB_HOST: localhost
       DB_PORT: 3306
@@ -166,9 +156,26 @@ jobs:
         run: |
           echo "✅ 集成测试环境配置完成"
           echo "📋 配置的secrets:"
-          echo "- DB_PASSWORD: 已设置"${{ secrets.DB_PASSWORD != '' && ' ✓' || ' ✗' }}
-          echo "- REDIS_PASSWORD: 已设置"${{ secrets.REDIS_PASSWORD != '' && ' ✓' || ' ✗' }}
-          echo "- JWT_SECRET: 已设置"${{ secrets.JWT_SECRET != '' && ' ✓' || ' ✗' }}
+          
+          # 检查环境变量是否设置（通过env传递）
+          if [ -n "$DB_PASSWORD" ]; then
+            echo "- DB_PASSWORD: 已设置 ✓"
+          else
+            echo "- DB_PASSWORD: 未设置 ✗"
+          fi
+          
+          if [ -n "$REDIS_PASSWORD" ]; then
+            echo "- REDIS_PASSWORD: 已设置 ✓"
+          else
+            echo "- REDIS_PASSWORD: 未设置 ✗"
+          fi
+          
+          if [ -n "$JWT_SECRET" ]; then
+            echo "- JWT_SECRET: 已设置 ✓"
+          else
+            echo "- JWT_SECRET: 未设置 ✗"
+          fi
+          
           echo ""
           echo "💡 要运行完整集成测试，请："
           echo "1. 在GitHub仓库设置中配置上述secrets"
