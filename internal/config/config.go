@@ -123,7 +123,7 @@ func Load() (*Config, error) {
 	// 环境变量覆盖
 	viper.AutomaticEnv()
 	bindEnvVars()
-	
+
 	// 处理环境变量兼容性（DATABASE_ 前缀 -> DB_ 前缀）
 	handleEnvCompatibility()
 
@@ -205,7 +205,7 @@ func bindEnvVars() {
 	viper.BindEnv("app.version", "APP_VERSION")
 	viper.BindEnv("app.env", "APP_ENV")
 	viper.BindEnv("app.debug", "APP_DEBUG")
-	
+
 	// 服务器环境变量
 	viper.BindEnv("server.port", "SERVER_PORT")
 	viper.BindEnv("server.host", "SERVER_HOST")
@@ -226,7 +226,7 @@ func bindEnvVars() {
 	viper.BindEnv("database.max_open_conns", "DB_MAX_OPEN_CONNS")
 	viper.BindEnv("database.max_idle_conns", "DB_MAX_IDLE_CONNS")
 	viper.BindEnv("database.conn_max_lifetime", "DB_CONN_MAX_LIFETIME")
-	
+
 	// 数据库兼容性环境变量（旧 DATABASE_ 前缀）
 	viper.BindEnv("database.host", "DATABASE_HOST")
 	viper.BindEnv("database.port", "DATABASE_PORT")
@@ -270,7 +270,7 @@ func bindEnvVars() {
 	viper.BindEnv("kafka.notification_group_id", "KAFKA_NOTIFICATION_GROUP_ID")
 	viper.BindEnv("kafka.audit_group_id", "KAFKA_AUDIT_GROUP_ID")
 	// 注意：topics字段较复杂，通常通过配置文件设置
-	
+
 	// 邮件配置环境变量（可选）
 	viper.BindEnv("smtp.host", "SMTP_HOST")
 	viper.BindEnv("smtp.port", "SMTP_PORT")
@@ -360,23 +360,23 @@ func validateConfig(cfg *Config) error {
 func handleEnvCompatibility() {
 	// 数据库配置兼容性：如果 DB_ 前缀未设置，但 DATABASE_ 前缀已设置，则使用 DATABASE_ 的值
 	compatMap := map[string]string{
-		"DB_HOST":                 "DATABASE_HOST",
-		"DB_PORT":                 "DATABASE_PORT",
-		"DB_NAME":                 "DATABASE_NAME",
-		"DB_USER":                 "DATABASE_USER",
-		"DB_PASSWORD":             "DATABASE_PASSWORD",
-		"DB_CHARSET":              "DATABASE_CHARSET",
-		"DB_PARSE_TIME":           "DATABASE_PARSE_TIME",
-		"DB_LOC":                  "DATABASE_LOC",
-		"DB_MAX_OPEN_CONNS":       "DATABASE_MAX_OPEN_CONNS",
-		"DB_MAX_IDLE_CONNS":       "DATABASE_MAX_IDLE_CONNS",
-		"DB_CONN_MAX_LIFETIME":    "DATABASE_CONN_MAX_LIFETIME",
+		"DB_HOST":              "DATABASE_HOST",
+		"DB_PORT":              "DATABASE_PORT",
+		"DB_NAME":              "DATABASE_NAME",
+		"DB_USER":              "DATABASE_USER",
+		"DB_PASSWORD":          "DATABASE_PASSWORD",
+		"DB_CHARSET":           "DATABASE_CHARSET",
+		"DB_PARSE_TIME":        "DATABASE_PARSE_TIME",
+		"DB_LOC":               "DATABASE_LOC",
+		"DB_MAX_OPEN_CONNS":    "DATABASE_MAX_OPEN_CONNS",
+		"DB_MAX_IDLE_CONNS":    "DATABASE_MAX_IDLE_CONNS",
+		"DB_CONN_MAX_LIFETIME": "DATABASE_CONN_MAX_LIFETIME",
 	}
 
 	for newKey, oldKey := range compatMap {
 		newVal := os.Getenv(newKey)
 		oldVal := os.Getenv(oldKey)
-		
+
 		// 如果新键未设置但旧键已设置，则设置到 viper 中
 		if newVal == "" && oldVal != "" {
 			// 将环境变量名转换为 viper 的键名
@@ -396,7 +396,7 @@ func handleEnvCompatibility() {
 			}
 		}
 	}
-	
+
 	// 应用配置兼容性
 	if os.Getenv("APP_ENV") != "" && viper.GetString("app.env") == "" {
 		viper.Set("app.env", os.Getenv("APP_ENV"))
