@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"taskflow-backend/internal/config"
 	"taskflow-backend/internal/models"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 var (

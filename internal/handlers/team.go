@@ -19,7 +19,7 @@ func NewTeamHandler(db *gorm.DB) *TeamHandler {
 	}
 }
 
-// CreateTeam 创建团队
+// CreateTeam 创建团队w
 func (h *TeamHandler) CreateTeam(c *gin.Context) {
 	// TODO: 实现创建团队逻辑
 }

@@ -59,8 +59,34 @@ func main() {
 		}
 	}
 
+	// 5. 连接Redis
+	redisClient, err := database.ConnectRedis(cfg.Redis)
+	if err != nil {
+		logger.Error("⚠️ Redis连接失败", logger.ErrorField(err))
+		// 可以选择继续启动，但黑名单功能将不可用
+		logger.Warn("黑名单功能将不可用")
+	} else {
+		defer func() {
+			if err := database.CloseRedis(); err != nil {
+				logger.Error("关闭Redis连接失败", logger.ErrorField(err))
+			}
+		}()
+
+		// Redis健康检查
+		go func() {
+			ticker := time.NewTicker(30 * time.Second)
+			defer ticker.Stop()
+
+			for range ticker.C {
+				if err := database.RedisHealthCheck(); err != nil {
+					logger.Error("Redis健康检查失败", logger.ErrorField(err))
+				}
+			}
+		}()
+	}
+
 	// 5. 创建HTTP服务器
-	srv := server.New(cfg, db)
+	srv := server.New(cfg, db, redisClient)
 
 	// 6. 启动服务器（在goroutine中）
 	go func() {

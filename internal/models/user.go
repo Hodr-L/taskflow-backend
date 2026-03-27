@@ -10,11 +10,13 @@ import (
 type User struct {
 	ID            uint           `gorm:"primaryKey" json:"id"`
 	Username      string         `gorm:"size:50;uniqueIndex;not null" json:"username"`
+	Fullname      string         `gorm:"size:50;" json:"fullname"`
 	Email         string         `gorm:"size:100;uniqueIndex;not null" json:"email"`
 	PasswordHash  string         `gorm:"size:255;not null" json:"-"`
 	AvatarURL     *string        `gorm:"size:255" json:"avatar_url,omitempty"`
 	Role          string         `gorm:"size:20;default:'user'" json:"role"`     // super_admin, admin, user
 	Status        string         `gorm:"size:20;default:'active'" json:"status"` // active, inactive, banned
+	Bio           string         `gorm:"size:255'" json:"bio"`                   // active, inactive, banned
 	EmailVerified bool           `gorm:"default:false" json:"email_verified"`
 	LastLoginAt   *time.Time     `json:"last_login_at,omitempty"`
 	CreatedAt     time.Time      `json:"created_at"`
@@ -90,10 +92,13 @@ func (u *User) ToResponse() map[string]interface{} {
 		"email":          u.Email,
 		"avatar_url":     u.AvatarURL,
 		"role":           u.Role,
+		"fullName":       u.Fullname,
+		"bio":            u.Bio,
 		"status":         u.Status,
 		"email_verified": u.EmailVerified,
 		"last_login_at":  u.LastLoginAt,
 		"created_at":     u.CreatedAt,
+		"updated_at":     u.UpdatedAt,
 	}
 }
 
@@ -110,10 +115,21 @@ type UserLoginRequest struct {
 	Password string `json:"password" binding:"required,min=6"`
 }
 
-// UserUpdateRequest 更新用户请求
-type UserUpdateRequest struct {
+// UpdateProfileRequest 用户更新自己请求
+type UpdateProfileRequest struct {
 	Username  *string `json:"username,omitempty" binding:"omitempty,min=3,max=50"`
 	AvatarURL *string `json:"avatar_url,omitempty" binding:"omitempty,url"`
+}
+
+// UpdateProfileRequest 更新用户请求
+type UpdateUserRequest struct {
+	UpdateProfileRequest
+	Email          *string `json:"email,omitempty" binding:"omitempty,email"`
+	Role           *string `json:"role,omitempty" binding:"omitempty,oneof=user admin super_admin"`
+	Status         *string `json:"status,omitempty" binding:"omitempty,oneof=active inactive banned"`
+	Email_verified *bool   `json:"email_verified,omitempty" binding:"omitempty"`
+	Fullname       *string `json:"fullname,omitempty" binding:"omitempty,min=3,max=50"`
+	Bio            *string `json:"bio,omitempty" binding:"omitempty,min=3,max=100"`
 }
 
 // UserChangePasswordRequest 修改密码请求
@@ -122,33 +138,33 @@ type UserChangePasswordRequest struct {
 	NewPassword string `json:"new_password" binding:"required,min=6,max=100"`
 }
 
-// UserResponse 用户响应
-type UserResponse struct {
-	ID            uint       `json:"id"`
-	Username      string     `json:"username"`
-	Email         string     `json:"email"`
-	AvatarURL     *string    `json:"avatar_url,omitempty"`
-	Role          string     `json:"role"`
-	Status        string     `json:"status"`
-	EmailVerified bool       `json:"email_verified"`
-	LastLoginAt   *time.Time `json:"last_login_at,omitempty"`
-	CreatedAt     time.Time  `json:"created_at"`
-	UpdatedAt     time.Time  `json:"updated_at"`
+// GetUsersParams 获取用户列表查询参数
+type GetUsersParams struct {
+	Page          int       `form:"page,default=1" binding:"min=1"`
+	Limit         int       `form:"limit,default=20" binding:"min=1,max=100"`
+	Search        string    `form:"search" binding:"omitempty,max=100"`
+	Role          string    `form:"role" binding:"omitempty,oneof=user admin super_admin"`
+	Status        string    `form:"status" binding:"omitempty,oneof=active inactive banned"`
+	EmailVerified *bool     `form:"email_verified"`
+	CreatedAtFrom time.Time `form:"created_at_from" binding:"omitempty" time_format:"2006-01-02T15:04:05Z"`
+	CreatedAtTo   time.Time `form:"created_at_to" binding:"omitempty" time_format:"2006-01-02T15:04:05Z"`
 }
 
-// AuthResponse 认证响应
-type AuthResponse struct {
-	AccessToken  string      `json:"access_token"`
-	RefreshToken string      `json:"refresh_token,omitempty"`
-	TokenType    string      `json:"token_type"`
-	ExpiresIn    int64       `json:"expires_in"`
-	User         interface{} `json:"user"`
+// Pagination 分页信息结构体
+type Pagination struct {
+	Page       int   `json:"page"`
+	Limit      int   `json:"limit"`
+	Total      int64 `json:"total"`
+	TotalPages int64 `json:"total_pages"`
 }
 
-// PaginatedUsersResponse 分页用户响应
-type PaginatedUsersResponse struct {
-	Users []UserResponse `json:"users"`
-	Total int64          `json:"total"`
-	Page  int            `json:"page"`
-	Limit int            `json:"limit"`
+// UserListResponse 用户列表响应结构体（使用 data 字段）
+type UserListResponse struct {
+	User       interface{} `json:"user"`
+	Pagination Pagination  `json:"Pagination"`
+}
+
+type ResetPasswordRequest struct {
+	NewPassword      string `json:"new_password" binding:"required,min=6,max=100"`
+	SendNotification bool   `json:"send_notification" binding:"omitempty"`
 }
