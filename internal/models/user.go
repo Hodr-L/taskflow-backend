@@ -168,3 +168,35 @@ type ResetPasswordRequest struct {
 	NewPassword      string `json:"new_password" binding:"required,min=6,max=100"`
 	SendNotification bool   `json:"send_notification" binding:"omitempty"`
 }
+
+type UserStats struct {
+	Total      int64 `json:"total"`
+	Active     int64 `json:"active"`
+	Inactive   int64 `json:"inactive"`
+	Banned     int64 `json:"banned"`
+	Admin      int64 `json:"admin"`
+	SuperAdmin int64 `json:"super_admin"`
+	Unverified int64 `json:"unverified"`
+}
+
+// CreateUserRequest 创建用户请求结构体
+type CreateUserRequest struct {
+	// 必填字段
+	Username string `json:"username" binding:"required,min=3,max=50" validate:"required,min=3,max=50"`
+	Email    string `json:"email" binding:"required,email" validate:"required,email" example:"john@example.com"`
+	Password string `json:"password" binding:"required,min=6,max=100" validate:"required,min=6,max=100"`
+
+	// 可选字段
+	Fullname string `json:"fullname,omitempty" binding:"omitempty,min=1,max=100" validate:"omitempty,min=1,max=100"`
+	Bio      string `json:"bio,omitempty" binding:"omitempty,max=500" validate:"omitempty,max=500"`
+
+	// 枚举字段
+	Role   string `json:"role,omitempty" binding:"omitempty,oneof=user admin super_admin" validate:"omitempty,oneof=user admin super_admin"`
+	Status string `json:"status,omitempty" binding:"omitempty,oneof=active inactive banned" validate:"omitempty,oneof=active inactive banned"`
+
+	// URL字段
+	AvatarURL string `json:"avatar_url,omitempty" binding:"omitempty,url" validate:"omitempty,url" `
+
+	// 布尔字段
+	SendWelcomeEmail bool `json:"send_welcome_email,omitempty" binding:"omitempty"`
+}

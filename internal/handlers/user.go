@@ -140,7 +140,6 @@ func (h *UserHandler) ChangePassword(c *gin.Context) {
 
 // GetTeams 获取用户列表
 func (h *UserHandler) GetListUsers(c *gin.Context) {
-	// TODO: 实现获取用户列表逻辑
 	var req models.GetUsersParams
 	if err := c.ShouldBindQuery(&req); err != nil {
 		logger.Warn("查询参数验证失败", logger.ErrorField(err))
@@ -156,7 +155,6 @@ func (h *UserHandler) GetListUsers(c *gin.Context) {
 	}
 
 	userData := h.userService.ToUserListResponse(listUser)
-	//todo 创建返回信息
 	response := models.UserListResponse{
 		User: userData,
 		Pagination: models.Pagination{
@@ -171,7 +169,7 @@ func (h *UserHandler) GetListUsers(c *gin.Context) {
 
 }
 
-// GetTeam 获取用户详情
+// GetUser GetTeam 获取用户详情
 func (h *UserHandler) GetUser(c *gin.Context) {
 	id := c.Param("id")
 
@@ -194,7 +192,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 	Success(c, "获取成功", user.ToResponse())
 }
 
-// UpdateTeam 更新用户
+// UpdateUser UpdateTeam 更新用户
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 
 	id := c.Param("id")
@@ -226,7 +224,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	Success(c, "更新成功", user.ToResponse())
 }
 
-// DeleteTeam 删除用户
+// DeleteUser DeleteTeam 删除用户
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	// TODO: 实现删除用户逻辑
 	id := c.Param("id")
@@ -251,6 +249,7 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 
 }
 
+// ResetPassword 重置密码
 func (h *UserHandler) ResetPassword(c *gin.Context) {
 	id := c.Param("id")
 
@@ -276,8 +275,29 @@ func (h *UserHandler) ResetPassword(c *gin.Context) {
 
 }
 
+// GetUsersStats 获取user 状态数量
 func (h *UserHandler) GetUsersStats(c *gin.Context) {
+	stats, err := h.userService.GetUserStatus()
+	if err != nil {
+		InternalServerError(c, "status 查询失败", err)
+	}
 
-	Success(c, "重置密码成功", nil)
+	Success(c, "status查询成功", stats)
+}
 
+// CreateUser 创建用户
+func (h *UserHandler) CreateUser(c *gin.Context) {
+
+	var req models.CreateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		BadRequest(c, "参数验证失败", err)
+		return
+	}
+
+	user, err := h.userService.CreateUser(req)
+	if err != nil {
+		InternalServerError(c, "创建用户失败", err)
+		return
+	}
+	Success(c, "创建用户成功", user.ToResponse())
 }
