@@ -19,7 +19,7 @@ func RegisterProjectRoutes(router *gin.RouterGroup, jwtManager *jwt.JWTManager, 
 		// projects.GET("/:id", projectHandler.GetProject)
 		// projects.PUT("/:id", projectHandler.UpdateProject)
 		// projects.DELETE("/:id", projectHandler.DeleteProject)
-		
+
 		// TODO: 添加项目任务管理路由
 		// projects.GET("/:id/tasks", projectHandler.GetProjectTasks)
 		// projects.GET("/:id/members", projectHandler.GetProjectMembers)
