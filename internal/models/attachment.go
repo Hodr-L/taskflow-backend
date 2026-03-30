@@ -7,9 +7,9 @@ import (
 )
 
 type Attachment struct {
-	ID          uint           `gorm:"primaryKey" json:"id"`
-	TaskID      uint           `gorm:"not null" json:"task_id"`
-	UserID      uint           `gorm:"not null" json:"user_id"`
+	ID          UUID           `gorm:"type:char(36);primaryKey" json:"id"`
+	TaskID      UUID           `gorm:"type:char(36);not null" json:"task_id"`
+	UserID      UUID           `gorm:"type:char(36);not null" json:"user_id"`
 	Filename    string         `gorm:"size:255;not null" json:"filename"`
 	FileSize    int64          `json:"file_size"`
 	MimeType    string         `gorm:"size:100" json:"mime_type"`
@@ -27,6 +27,9 @@ func (Attachment) TableName() string {
 }
 
 func (a *Attachment) BeforeCreate(tx *gorm.DB) error {
+	if a.ID.IsZero() {
+		a.ID = NewUUID()
+	}
 	a.CreatedAt = time.Now()
 	return nil
 }

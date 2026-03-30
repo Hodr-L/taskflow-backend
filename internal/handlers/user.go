@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"errors"
-	"strconv"
 	"taskflow-backend/internal/models"
 	"taskflow-backend/pkg/logger"
 
@@ -24,6 +23,24 @@ func NewUserHandler(db *gorm.DB) *UserHandler {
 	}
 }
 
+// getCurrentUserID 从上下文获取当前用户ID（UUID）
+func (h *UserHandler) getCurrentUserID(c *gin.Context) (models.UUID, error) {
+	userIDStr, exists := c.Get("user_id")
+	if !exists {
+		return models.UUID{}, errors.New("未认证")
+	}
+	return models.ParseUUID(userIDStr.(string))
+}
+
+// parseUUIDParam 从路径参数解析UUID
+func (h *UserHandler) parseUUIDParam(c *gin.Context, param string) (models.UUID, error) {
+	idStr := c.Param(param)
+	if idStr == "" {
+		return models.UUID{}, errors.New("参数不能为空")
+	}
+	return models.ParseUUID(idStr)
+}
+
 // GetProfile 获取当前用户信息
 // @Summary 获取当前用户信息
 // @Description 获取已登录用户的详细信息
@@ -35,13 +52,13 @@ func NewUserHandler(db *gorm.DB) *UserHandler {
 // @Failure 404 {object} ErrorResponse
 // @Router /auth/profile [get]
 func (h *UserHandler) GetProfile(c *gin.Context) {
-	userID, exists := c.Get("user_id")
-	if !exists {
-		Unauthorized(c, "未认证")
+	userID, err := h.getCurrentUserID(c)
+	if err != nil {
+		Unauthorized(c, err.Error())
 		return
 	}
 
-	user, err := h.userService.GetUserByID(userID.(uint))
+	user, err := h.userService.GetUserByID(userID)
 	if err != nil {
 		if err == services.ErrUserNotFound {
 			NotFound(c, "用户不存在")
@@ -67,9 +84,9 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 // @Failure 401 {object} ErrorResponse
 // @Router /auth/profile [put]
 func (h *UserHandler) UpdateProfile(c *gin.Context) {
-	userID, exists := c.Get("user_id")
-	if !exists {
-		Unauthorized(c, "未认证")
+	userID, err := h.getCurrentUserID(c)
+	if err != nil {
+		Unauthorized(c, err.Error())
 		return
 	}
 
@@ -79,7 +96,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	user, err := h.userService.UpdateUser(userID.(uint), req)
+	user, err := h.userService.UpdateUser(userID, req)
 	if err != nil {
 		switch err {
 		case services.ErrUserNotFound:
@@ -108,9 +125,9 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 // @Failure 401 {object} ErrorResponse
 // @Router /auth/password [put]
 func (h *UserHandler) ChangePassword(c *gin.Context) {
-	userID, exists := c.Get("user_id")
-	if !exists {
-		Unauthorized(c, "未认证")
+	userID, err := h.getCurrentUserID(c)
+	if err != nil {
+		Unauthorized(c, err.Error())
 		return
 	}
 
@@ -120,7 +137,7 @@ func (h *UserHandler) ChangePassword(c *gin.Context) {
 		return
 	}
 
-	err := h.userService.ChangePassword(userID.(uint), req.OldPassword, req.NewPassword)
+	err = h.userService.ChangePassword(userID, req.OldPassword, req.NewPassword)
 	if err != nil {
 		switch err {
 		case services.ErrUserNotFound:
@@ -171,15 +188,13 @@ func (h *UserHandler) GetListUsers(c *gin.Context) {
 
 // GetUser GetTeam 获取用户详情
 func (h *UserHandler) GetUser(c *gin.Context) {
-	id := c.Param("id")
-
-	userID, err := strconv.ParseUint(id, 10, 64)
+	userID, err := h.parseUUIDParam(c, "id")
 	if err != nil {
-		InternalServerError(c, "无效的用户ID")
+		BadRequest(c, "无效的用户ID格式")
 		return
 	}
 
-	user, err := h.userService.GetUserByID(uint(userID))
+	user, err := h.userService.GetUserByID(userID)
 	if err != nil {
 		if errors.Is(err, services.ErrUserNotFound) {
 			NotFound(c, "用户不存在")
@@ -194,11 +209,9 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 
 // UpdateUser UpdateTeam 更新用户
 func (h *UserHandler) UpdateUser(c *gin.Context) {
-
-	id := c.Param("id")
-	userID, err := strconv.ParseUint(id, 10, 64)
+	userID, err := h.parseUUIDParam(c, "id")
 	if err != nil {
-		InternalServerError(c, "无效的用户ID")
+		BadRequest(c, "无效的用户ID格式")
 		return
 	}
 
@@ -208,7 +221,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	user, err := h.userService.UpdateUser(uint(userID), req)
+	user, err := h.userService.UpdateUser(userID, req)
 	if err != nil {
 		switch err {
 		case services.ErrUserNotFound:
@@ -226,16 +239,13 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 
 // DeleteUser DeleteTeam 删除用户
 func (h *UserHandler) DeleteUser(c *gin.Context) {
-	// TODO: 实现删除用户逻辑
-	id := c.Param("id")
-
-	userID, err2 := strconv.ParseUint(id, 10, 64)
-	if err2 != nil {
-		InternalServerError(c, "无效的用户ID")
+	userID, err := h.parseUUIDParam(c, "id")
+	if err != nil {
+		BadRequest(c, "无效的用户ID格式")
 		return
 	}
 
-	err := h.userService.DeleteUserByID(uint(userID))
+	err = h.userService.DeleteUserByID(userID)
 	if err != nil {
 		if errors.Is(err, services.ErrUserNotFound) {
 			NotFound(c, "用户不存在")
@@ -246,16 +256,13 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 	}
 
 	Success(c, "删除成功", nil)
-
 }
 
 // ResetPassword 重置密码
 func (h *UserHandler) ResetPassword(c *gin.Context) {
-	id := c.Param("id")
-
-	userID, err2 := strconv.ParseUint(id, 10, 64)
-	if err2 != nil {
-		InternalServerError(c, "无效的用户ID")
+	userID, err := h.parseUUIDParam(c, "id")
+	if err != nil {
+		BadRequest(c, "无效的用户ID格式")
 		return
 	}
 
@@ -265,14 +272,13 @@ func (h *UserHandler) ResetPassword(c *gin.Context) {
 		return
 	}
 
-	err := h.userService.ResetPassword(uint(userID), req)
+	err = h.userService.ResetPassword(userID, req)
 	if err != nil {
 		InternalServerError(c, "重置密码错误", err)
 		return
 	}
 
 	Success(c, "重置密码成功", nil)
-
 }
 
 // GetUsersStats 获取user 状态数量

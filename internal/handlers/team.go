@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"taskflow-backend/internal/models"
+	"taskflow-backend/pkg/logger"
+
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
@@ -19,9 +22,34 @@ func NewTeamHandler(db *gorm.DB) *TeamHandler {
 	}
 }
 
-// CreateTeam 创建团队w
+// CreateTeam 创建团队
 func (h *TeamHandler) CreateTeam(c *gin.Context) {
-	// TODO: 实现创建团队逻辑
+	var req models.CreateTeamParams
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Warn("创建团队参数验证失败", logger.ErrorField(err))
+		BadRequest(c, "参数验证失败", err)
+		return
+	}
+
+	userIDStr, exists := c.Get("user_id")
+	if !exists {
+		InternalServerError(c, "userID 不存在")
+		return
+	}
+
+	userID, err := models.ParseUUID(userIDStr.(string))
+	if err != nil {
+		BadRequest(c, "无效的用户ID格式")
+		return
+	}
+
+	team, err := h.teamService.CreateTeam(userID, req.Name, req.Description, req.LogoURL)
+	if err != nil {
+		InternalServerError(c, "创建团队失败", err)
+		return
+	}
+
+	Success(c, "创建团队成功", team.ToResponse())
 }
 
 func (h *TeamHandler) GetListTeams(c *gin.Context) {

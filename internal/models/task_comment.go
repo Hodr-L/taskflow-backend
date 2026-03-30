@@ -7,9 +7,9 @@ import (
 )
 
 type TaskComment struct {
-	ID        uint           `gorm:"primaryKey" json:"id"`
-	TaskID    uint           `gorm:"not null" json:"task_id"`
-	UserID    uint           `gorm:"not null" json:"user_id"`
+	ID        UUID           `gorm:"type:char(36);primaryKey" json:"id"`
+	TaskID    UUID           `gorm:"type:char(36);not null" json:"task_id"`
+	UserID    UUID           `gorm:"type:char(36);not null" json:"user_id"`
 	Content   string         `gorm:"type:text;not null" json:"content"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
@@ -25,6 +25,9 @@ func (TaskComment) TableName() string {
 }
 
 func (tc *TaskComment) BeforeCreate(tx *gorm.DB) error {
+	if tc.ID.IsZero() {
+		tc.ID = NewUUID()
+	}
 	tc.CreatedAt = time.Now()
 	tc.UpdatedAt = time.Now()
 	return nil

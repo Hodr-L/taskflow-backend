@@ -17,7 +17,7 @@ var (
 )
 
 type Claims struct {
-	UserID   uint   `json:"user_id"`
+	UserID   string `json:"user_id"`
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Role     string `json:"role"`
@@ -41,7 +41,7 @@ func NewJWTManager(cfg config.JWTConfig) *JWTManager {
 // GenerateAccessToken 生成访问令牌
 func (m *JWTManager) GenerateAccessToken(user *models.User) (string, error) {
 	claims := Claims{
-		UserID:   user.ID,
+		UserID:   user.ID.String(),
 		Username: user.Username,
 		Email:    user.Email,
 		Role:     user.Role,
@@ -49,7 +49,7 @@ func (m *JWTManager) GenerateAccessToken(user *models.User) (string, error) {
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(m.accessTokenDuration)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			Issuer:    "taskflow-backend",
-			Subject:   fmt.Sprintf("%d", user.ID),
+			Subject:   user.ID.String(),
 		},
 	}
 
@@ -60,7 +60,7 @@ func (m *JWTManager) GenerateAccessToken(user *models.User) (string, error) {
 // GenerateRefreshToken 生成刷新令牌
 func (m *JWTManager) GenerateRefreshToken(user *models.User) (string, error) {
 	claims := Claims{
-		UserID:   user.ID,
+		UserID:   user.ID.String(),
 		Username: user.Username,
 		Email:    user.Email,
 		Role:     user.Role,
@@ -68,7 +68,7 @@ func (m *JWTManager) GenerateRefreshToken(user *models.User) (string, error) {
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(m.refreshTokenDuration)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			Issuer:    "taskflow-backend",
-			Subject:   fmt.Sprintf("refresh-%d", user.ID),
+			Subject:   fmt.Sprintf("refresh-%s", user.ID.String()),
 		},
 	}
 
@@ -107,7 +107,7 @@ func (m *JWTManager) RefreshAccessToken(refreshToken string) (string, *Claims, e
 	}
 
 	// 检查是否是刷新令牌
-	if claims.Subject != fmt.Sprintf("refresh-%d", claims.UserID) {
+	if claims.Subject != fmt.Sprintf("refresh-%s", claims.UserID) {
 		return "", nil, ErrInvalidToken
 	}
 
@@ -121,7 +121,7 @@ func (m *JWTManager) RefreshAccessToken(refreshToken string) (string, *Claims, e
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(m.accessTokenDuration)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			Issuer:    "taskflow-backend",
-			Subject:   fmt.Sprintf("%d", claims.UserID),
+			Subject:   claims.UserID,
 		},
 	}
 

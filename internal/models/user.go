@@ -8,7 +8,7 @@ import (
 )
 
 type User struct {
-	ID            uint           `gorm:"primaryKey" json:"id"`
+	ID            UUID           `gorm:"type:char(36);primaryKey;default:(UUID())" json:"id"`
 	Username      string         `gorm:"size:50;uniqueIndex;not null" json:"username"`
 	Fullname      string         `gorm:"size:50;" json:"fullname"`
 	Email         string         `gorm:"size:100;uniqueIndex;not null" json:"email"`
@@ -41,6 +41,9 @@ func (User) TableName() string {
 
 // BeforeCreate 创建前的钩子
 func (u *User) BeforeCreate(tx *gorm.DB) error {
+	if u.ID.IsZero() {
+		u.ID = NewUUID()
+	}
 	u.CreatedAt = time.Now()
 	u.UpdatedAt = time.Now()
 	return nil

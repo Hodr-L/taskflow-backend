@@ -7,8 +7,8 @@ import (
 )
 
 type Notification struct {
-	ID        uint           `gorm:"primaryKey" json:"id"`
-	UserID    uint           `gorm:"not null" json:"user_id"`
+	ID        UUID           `gorm:"type:char(36);primaryKey" json:"id"`
+	UserID    UUID           `gorm:"type:char(36);not null" json:"user_id"`
 	Type      string         `gorm:"size:50;not null" json:"type"`
 	Title     string         `gorm:"size:200;not null" json:"title"`
 	Content   string         `json:"content,omitempty"`
@@ -26,6 +26,9 @@ func (Notification) TableName() string {
 }
 
 func (n *Notification) BeforeCreate(tx *gorm.DB) error {
+	if n.ID.IsZero() {
+		n.ID = NewUUID()
+	}
 	n.CreatedAt = time.Now()
 	return nil
 }

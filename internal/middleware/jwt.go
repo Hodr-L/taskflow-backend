@@ -67,7 +67,7 @@ func JWTAuth(jwtManager *jwt.JWTManager, tokenBlacklist *services.TokenBlacklist
 		c.Set("token", tokenString)
 
 		logger.Debug("JWT认证通过",
-			zap.Uint("user_id", claims.UserID),
+			zap.String("user_id", claims.UserID),
 			zap.String("username", claims.Username),
 			zap.String("path", c.Request.URL.Path),
 		)
@@ -163,19 +163,15 @@ func hasPermission(userRole, requiredRole string) bool {
 }
 
 // GetCurrentUserID 从上下文获取当前用户ID
-func GetCurrentUserID(c *gin.Context) (uint, bool) {
+func GetCurrentUserID(c *gin.Context) (string, bool) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		return 0, false
+		return "", false
 	}
 
-	id, ok := userID.(uint)
+	id, ok := userID.(string)
 	if !ok {
-		// 尝试转换为float64（JSON数字可能被解析为float64）
-		if floatID, ok := userID.(float64); ok {
-			return uint(floatID), true
-		}
-		return 0, false
+		return "", false
 	}
 
 	return id, true

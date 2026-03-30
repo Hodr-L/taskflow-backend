@@ -191,6 +191,6 @@ type RefreshTokenResponse struct {
 	AccessToken string `json:"access_token"`
 	TokenType   string `json:"token_type"`
 	ExpiresIn   int64  `json:"expires_in"`
-	UserID      uint   `json:"user_id"`
+	UserID      string `json:"user_id"`
 	Username    string `json:"username"`
 }

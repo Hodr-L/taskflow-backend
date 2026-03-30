@@ -7,12 +7,12 @@ import (
 )
 
 type Task struct {
-	ID             uint           `gorm:"primaryKey" json:"id"`
+	ID             UUID           `gorm:"type:char(36);primaryKey" json:"id"`
 	Title          string         `gorm:"size:200;not null" json:"title"`
 	Description    string         `json:"description,omitempty"`
-	ProjectID      uint           `gorm:"not null" json:"project_id"`
-	AssigneeID     *uint          `json:"assignee_id,omitempty"`
-	ReporterID     uint           `gorm:"not null" json:"reporter_id"`
+	ProjectID      UUID           `gorm:"type:char(36);not null" json:"project_id"`
+	AssigneeID     *UUID          `gorm:"type:char(36)" json:"assignee_id,omitempty"`
+	ReporterID     UUID           `gorm:"type:char(36);not null" json:"reporter_id"`
 	Priority       string         `gorm:"size:10;default:'medium'" json:"priority"` // low, medium, high, urgent
 	Status         string         `gorm:"size:20;default:'todo'" json:"status"`     // todo, in_progress, review, done, cancelled
 	DueDate        *time.Time     `json:"due_date,omitempty"`
@@ -37,6 +37,9 @@ func (Task) TableName() string {
 
 // BeforeCreate 创建前的钩子
 func (t *Task) BeforeCreate(tx *gorm.DB) error {
+	if t.ID.IsZero() {
+		t.ID = NewUUID()
+	}
 	t.CreatedAt = time.Now()
 	t.UpdatedAt = time.Now()
 	return nil

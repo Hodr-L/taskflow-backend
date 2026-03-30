@@ -17,9 +17,9 @@ func NewUserService(db *gorm.DB) *UserService {
 }
 
 // GetUserByID 根据ID获取用户
-func (s *UserService) GetUserByID(id uint) (*models.User, error) {
+func (s *UserService) GetUserByID(id models.UUID) (*models.User, error) {
 	var user models.User
-	if err := s.db.First(&user, id).Error; err != nil {
+	if err := s.db.First(&user, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrUserNotFound
 		}
@@ -37,7 +37,6 @@ func (s *UserService) ListUsers(req models.GetUsersParams) ([]models.User, int64
 	limit := req.Limit
 
 	query := s.db.Model(&models.User{})
-	// todo 缺少按角色查找 按状态查找 按邮箱验证状态查找 按创建起始时间和结束时间查找
 	// 1. 搜索条件（用户名或邮箱）
 	if search != "" {
 		query = query.Where("username LIKE ? OR email LIKE ?",
@@ -130,7 +129,7 @@ func (s *UserService) UpdateUserRole(id uint, role string) error {
 }
 
 // UpdateUser 更新用户信息
-func (s *UserService) UpdateUser(id uint, req models.UpdateUserRequest) (*models.User, error) {
+func (s *UserService) UpdateUser(id models.UUID, req models.UpdateUserRequest) (*models.User, error) {
 	user, err := s.GetUserByID(id)
 	if err != nil {
 		return nil, err
@@ -186,7 +185,7 @@ func (s *UserService) UpdateUser(id uint, req models.UpdateUserRequest) (*models
 }
 
 // ChangePassword 修改密码
-func (s *UserService) ChangePassword(id uint, oldPassword, newPassword string) error {
+func (s *UserService) ChangePassword(id models.UUID, oldPassword, newPassword string) error {
 	user, err := s.GetUserByID(id)
 	if err != nil {
 		return err
@@ -215,7 +214,7 @@ func (s *UserService) ChangePassword(id uint, oldPassword, newPassword string) e
 	return nil
 }
 
-func (s *UserService) DeleteUserByID(id uint) error {
+func (s *UserService) DeleteUserByID(id models.UUID) error {
 	user, err := s.GetUserByID(id)
 	if err != nil {
 		return err
@@ -228,7 +227,7 @@ func (s *UserService) DeleteUserByID(id uint) error {
 	return nil
 }
 
-func (s *UserService) ResetPassword(id uint, req models.ResetPasswordRequest) error {
+func (s *UserService) ResetPassword(id models.UUID, req models.ResetPasswordRequest) error {
 
 	user, err := s.GetUserByID(id)
 	if err != nil {

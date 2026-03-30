@@ -47,7 +47,7 @@ func (s *TokenBlacklistService) AddToBlacklist(ctx *gin.Context, token string) e
 	// key := fmt.Sprintf("token:blacklist:%s", claims.JTI)
 
 	logger.Info("token已加入黑名单",
-		zap.Uint("user_id", claims.UserID),
+		zap.String("user_id", claims.UserID),
 		zap.String("username", claims.Username),
 		zap.String("token", token[:20]+"..."), // 只记录部分 token
 		zap.Duration("ttl", ttl),
@@ -68,8 +68,8 @@ func (s *TokenBlacklistService) IsBlacklisted(ctx *gin.Context, token string) (b
 }
 
 // LogoutUser 登出用户（可选：可以登出所有设备）
-func (s *TokenBlacklistService) LogoutUser(ctx *gin.Context, userID uint) error {
+func (s *TokenBlacklistService) LogoutUser(ctx *gin.Context, userID string) error {
 	// 记录用户登出时间，可以用来使该时间之前的所有 token 失效
-	key := fmt.Sprintf("user:logout:%d", userID)
+	key := fmt.Sprintf("user:logout:%s", userID)
 	return s.redisClient.Set(ctx, key, time.Now().Unix(), 24*time.Hour).Err()
 }
