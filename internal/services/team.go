@@ -1,11 +1,15 @@
 package services
 
 import (
+	"errors"
+
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
 	"taskflow-backend/internal/models"
 )
+
+var ErrTeamNotFound = errors.New("团队不存在")
 
 type TeamService struct {
 	db *gorm.DB
@@ -46,7 +50,7 @@ func (s *TeamService) CreateTeam(userID models.UUID, name, description, logoUrl 
 		TeamID: team.ID,
 		UserID: userID,
 		User:   user,
-		Role:   user.Role,
+		Role:   "owner",
 	}
 
 	err = teamMember.BeforeCreate(s.db)
@@ -70,32 +74,88 @@ func (s *TeamService) CreateTeam(userID models.UUID, name, description, logoUrl 
 }
 
 // GetListTeams 获取团队列表逻辑
-func (s *TeamService) GetListTeams(c *gin.Context) ([]models.Team, int64, error) {
-	// TODO: 实现获取团队列表逻辑
-	return nil, 0, nil
+func (s *TeamService) GetListTeams(c *gin.Context, req models.GetTeamsParams) ([]models.Team, int64, int64, error) {
+	var teams []models.Team
+	var total int64
+	search := req.Search
+	page := req.Page
+	limit := req.Limit
+
+	query := s.db.Model(&models.Team{})
+
+	query = query.Where("deleted_at IS NULL")
+
+	if search != "" {
+		query = query.Where("name LIKE ?",
+			"%"+search+"%")
+	}
+
+	if req.OwnerId != "" {
+		query = query.Where("owner_id = ?", req.OwnerId)
+	}
+
+	query = query.Order("created_at DESC")
+
+	// 计算总数
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, 0, err
+	}
+
+	// 分页查询
+	offset := (page - 1) * limit
+	if err := query.Offset(offset).Limit(limit).Preload("Members.User").Preload("Projects").Find(&teams).Error; err != nil {
+		return nil, 0, 0, err
+	}
+
+	totalPages := (total + int64(limit) - 1) / int64(limit)
+	return teams, total, totalPages, nil
 }
 
-// GetTeams 获取用户参与的团队列表
-func (s *TeamService) GetTeams(userID models.UUID, page, limit int) ([]models.Team, int64, error) {
-	// TODO: 获取用户参与的团队列表
-	return nil, 0, nil
-}
-
-// GetTeam 获取团队详情
-func (s *TeamService) GetTeam(teamID models.UUID, userID models.UUID) (*models.Team, error) {
-	// TODO: 实现获取团队详情逻辑
-	return nil, nil
+// GetTeamById 获取团队详情
+func (s *TeamService) GetTeamById(teamID models.UUID) (*models.Team, error) {
+	var team models.Team
+	if err := s.db.Preload("Owner").Preload("Members.User").Preload("Projects").First(&team, "id = ?", teamID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrTeamNotFound
+		}
+		return nil, err
+	}
+	return &team, nil
 }
 
 // UpdateTeam 更新团队信息
-func (s *TeamService) UpdateTeam(teamID models.UUID, userID models.UUID, updates map[string]interface{}) error {
-	// TODO: 实现更新团队逻辑
-	return nil
+func (s *TeamService) UpdateTeam(teamID models.UUID, updates models.UpdateTeamRequest) (*models.Team, error) {
+	var team models.Team
+
+	if err := s.db.First(&team, "id = ?", teamID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrTeamNotFound
+		}
+		return nil, err
+	}
+
+	team.Name = updates.Name
+	team.Description = updates.Description
+	team.LogoURL = updates.LogoURL
+
+	if err := s.db.Save(&team).Error; err != nil {
+		return nil, err
+	}
+
+	return &team, nil
 }
 
 // DeleteTeam 删除团队
-func (s *TeamService) DeleteTeam(teamID models.UUID, userID models.UUID) error {
-	// TODO: 实现删除团队逻辑
+func (s *TeamService) DeleteTeam(teamID models.UUID) error {
+	team, err := s.GetTeamById(teamID)
+	if err != nil {
+		return err
+	}
+
+	if err := s.db.Delete(&team).Error; err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -109,4 +169,34 @@ func (s *TeamService) AddTeamMember(teamID models.UUID, ownerID models.UUID, use
 func (s *TeamService) RemoveTeamMember(teamID models.UUID, ownerID models.UUID, userID models.UUID) error {
 	// TODO: 实现移除成员逻辑
 	return nil
+}
+
+func (t *TeamService) ToTeamResponse(team []models.Team) []interface{} {
+
+	var q []interface{}
+	for _, team := range team {
+		q = append(q, team.ToResponse())
+	}
+
+	return q
+}
+
+func (t *TeamService) ToTeamMembersResponse(teamMembers []models.TeamMember) []interface{} {
+
+	var q []interface{}
+	for _, teamMember := range teamMembers {
+		q = append(q, teamMember.ToTeamMemberResponse())
+	}
+
+	return q
+}
+
+func (t *TeamService) ToTeamProjectsResponse(teamProjects []models.Project) []interface{} {
+
+	var q []interface{}
+	for _, teamProject := range teamProjects {
+		q = append(q, teamProject.ToTeamProjectResponse())
+	}
+
+	return q
 }

@@ -27,7 +27,7 @@ func RegisterUserRoutes(router *gin.RouterGroup, jwtManager *jwt.JWTManager, tok
 		// TODO: 实现用户管理接口
 		admin.GET("", userHandler.GetListUsers)
 		admin.POST("", userHandler.CreateUser)
-		admin.GET("/:id", userHandler.GetUser)
+		admin.GET("/:id", userHandler.GetUserById)
 		admin.PUT("/:id", userHandler.UpdateUser)
 		admin.DELETE("/:id", userHandler.DeleteUser)
 		admin.POST("/:id/reset-password", userHandler.ResetPassword)

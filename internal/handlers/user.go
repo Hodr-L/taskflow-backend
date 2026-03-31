@@ -32,15 +32,6 @@ func (h *UserHandler) getCurrentUserID(c *gin.Context) (models.UUID, error) {
 	return models.ParseUUID(userIDStr.(string))
 }
 
-// parseUUIDParam 从路径参数解析UUID
-func (h *UserHandler) parseUUIDParam(c *gin.Context, param string) (models.UUID, error) {
-	idStr := c.Param(param)
-	if idStr == "" {
-		return models.UUID{}, errors.New("参数不能为空")
-	}
-	return models.ParseUUID(idStr)
-}
-
 // GetProfile 获取当前用户信息
 // @Summary 获取当前用户信息
 // @Description 获取已登录用户的详细信息
@@ -186,9 +177,9 @@ func (h *UserHandler) GetListUsers(c *gin.Context) {
 
 }
 
-// GetUser GetTeam 获取用户详情
-func (h *UserHandler) GetUser(c *gin.Context) {
-	userID, err := h.parseUUIDParam(c, "id")
+// GetUserById GetTeamById 获取用户详情
+func (h *UserHandler) GetUserById(c *gin.Context) {
+	userID, err := ParseUUIDParam(c, "id")
 	if err != nil {
 		BadRequest(c, "无效的用户ID格式")
 		return
@@ -209,7 +200,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 
 // UpdateUser UpdateTeam 更新用户
 func (h *UserHandler) UpdateUser(c *gin.Context) {
-	userID, err := h.parseUUIDParam(c, "id")
+	userID, err := ParseUUIDParam(c, "id")
 	if err != nil {
 		BadRequest(c, "无效的用户ID格式")
 		return
@@ -239,7 +230,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 
 // DeleteUser DeleteTeam 删除用户
 func (h *UserHandler) DeleteUser(c *gin.Context) {
-	userID, err := h.parseUUIDParam(c, "id")
+	userID, err := ParseUUIDParam(c, "id")
 	if err != nil {
 		BadRequest(c, "无效的用户ID格式")
 		return
@@ -260,7 +251,7 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 
 // ResetPassword 重置密码
 func (h *UserHandler) ResetPassword(c *gin.Context) {
-	userID, err := h.parseUUIDParam(c, "id")
+	userID, err := ParseUUIDParam(c, "id")
 	if err != nil {
 		BadRequest(c, "无效的用户ID格式")
 		return

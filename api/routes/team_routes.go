@@ -15,7 +15,7 @@ func RegisterTeamRoutes(router *gin.RouterGroup, jwtManager *jwt.JWTManager, tok
 	teams.Use(middleware.JWTAuth(jwtManager, tokenBlackHandler.TokenBlacklistService))
 	{
 		// 团队列表和创建
-		teams.GET("", teamHandler.GetTeams)
+		teams.GET("", teamHandler.GetListTeams)
 		teams.POST("", teamHandler.CreateTeam)
 
 		// 单个团队操作

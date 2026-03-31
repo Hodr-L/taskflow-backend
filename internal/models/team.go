@@ -78,12 +78,83 @@ type CreateTeamParams struct {
 // ToResponse 转换为API响应格式
 func (t *Team) ToResponse() map[string]interface{} {
 	return map[string]interface{}{
-		"id":          t.ID,
-		"name":        t.Name,
-		"description": t.Description,
-		"owner_id":    t.OwnerID,
-		"logo_url":    t.LogoURL,
-		"created_at":  t.CreatedAt,
-		"updated_at":  t.UpdatedAt,
+		"id":             t.ID,
+		"name":           t.Name,
+		"description":    t.Description,
+		"owner_id":       t.OwnerID,
+		"logo_url":       t.LogoURL,
+		"members_count":  len(t.Members),
+		"projects_count": len(t.Projects),
+		"created_at":     t.CreatedAt,
+		"updated_at":     t.UpdatedAt,
 	}
+}
+
+// ToResponse 转换为API响应格式
+func (t *Team) ToTeamsResponse() map[string]interface{} {
+	return map[string]interface{}{
+		"id":            t.ID,
+		"name":          t.Name,
+		"description":   t.Description,
+		"logo_url":      t.LogoURL,
+		"member_count":  len(t.Members),
+		"project_count": len(t.Projects),
+		"owner_id":      t.OwnerID,
+		"owner_name":    t.Owner.Username,
+		"created_at":    t.CreatedAt,
+	}
+}
+
+// ToResponse 转换为API响应格式
+func (t *TeamMember) ToTeamMemberResponse() map[string]interface{} {
+	return map[string]interface{}{
+		"user_id":    t.UserID,
+		"username":   t.User.Fullname,
+		"email":      t.User.Email,
+		"full_name":  t.User.Fullname,
+		"avatar_url": t.User.AvatarURL,
+		"role":       t.Role,
+		"joined_at":  t.JoinedAt,
+	}
+}
+
+// ToResponse 转换为API响应格式
+func (p *Project) ToTeamProjectResponse() map[string]interface{} {
+	return map[string]interface{}{
+		"id":          p.ID,
+		"name":        p.Name,
+		"description": p.Description,
+		"status":      p.Status,
+		"task_count":  len(p.Tasks),
+		//todo 实装task后 实装此处计数
+		"completed_tasks": 0,
+		"created_at":      p.CreatedAt,
+	}
+}
+
+type GetTeamsParams struct {
+	Page    int    `form:"page,default=1" binding:"min=1"`
+	Limit   int    `form:"limit,default=20" binding:"min=1,max=100"`
+	Search  string `form:"search" binding:"omitempty,max=100"`
+	OwnerId string `form:"owner_id" binding:"omitempty"`
+}
+
+// TeamListResponse 团队列表响应结构体（使用 data 字段）
+type TeamListResponse struct {
+	Teams      interface{} `json:"teams"`
+	Pagination Pagination  `json:"Pagination"`
+}
+
+// GetTeamByIDResponse 团队响应结构体（使用 data 字段）
+type GetTeamByIDResponse struct {
+	Team     Team          `json:"team"`
+	Members  []interface{} `json:"members"`
+	Projects []interface{} `json:"projects"`
+}
+
+// UpdateTeamRequest 团队列表请求结构体
+type UpdateTeamRequest struct {
+	Name        string  `json:"name,omitempty"`
+	Description string  `json:"description,omitempty"`
+	LogoURL     *string `json:"logo_url,omitempty"`
 }

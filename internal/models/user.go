@@ -153,14 +153,6 @@ type GetUsersParams struct {
 	CreatedAtTo   time.Time `form:"created_at_to" binding:"omitempty" time_format:"2006-01-02T15:04:05Z"`
 }
 
-// Pagination 分页信息结构体
-type Pagination struct {
-	Page       int   `json:"page"`
-	Limit      int   `json:"limit"`
-	Total      int64 `json:"total"`
-	TotalPages int64 `json:"total_pages"`
-}
-
 // UserListResponse 用户列表响应结构体（使用 data 字段）
 type UserListResponse struct {
 	User       interface{} `json:"user"`
